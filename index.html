@@ -72,12 +72,129 @@
             width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; margin-right: 6px;
             animation: status-pulse 1.5s infinite;
         }
+       /* =========================================
+           🎅 THÈME NOËL - ULTRA COMPLET 🎅
+           ========================================= */
+
+        /* 1. CURSEUR SAPIN (Uniquement sur PC) */
+        @media (min-width: 768px) {
+            .theme-christmas, 
+            .theme-christmas button, 
+            .theme-christmas a, 
+            .theme-christmas input {
+                /* Remplace le curseur par un Sapin */
+                cursor: url('https://img.icons8.com/color/32/christmas-tree.png'), auto !important;
+            }
+            /* Curseur "Main" devient un Père Noël ou Cadeau */
+            .theme-christmas .cursor-pointer {
+                cursor: url('https://img.icons8.com/color/32/gift--v1.png'), pointer !important;
+            }
+        }
+
+        /* 2. EFFET "GRELOT" (Les boutons tremblent au survol) */
+        @keyframes jingle {
+            0% { transform: rotate(0); }
+            25% { transform: rotate(5deg); }
+            50% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+            100% { transform: rotate(0); }
+        }
+
+        .theme-christmas button:hover,
+        .theme-christmas .cursor-pointer:hover {
+            animation: jingle 0.5s ease-in-out infinite; /* Ça grelotte ! */
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.8) !important; /* Lueur rouge */
+        }
+
+        /* 3. NEIGE MAGIQUE (Tombe et ondule) */
+        .snowflake {
+            position: fixed; top: -5vh; color: #fff;
+            text-shadow: 0 0 5px rgba(255,255,255,0.8);
+            pointer-events: none; z-index: 9999;
+            animation: snowfall linear infinite;
+        }
+        @keyframes snowfall {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+            25% { transform: translateY(25vh) translateX(15px) rotate(90deg); }
+            50% { transform: translateY(50vh) translateX(-15px) rotate(180deg); }
+            75% { transform: translateY(75vh) translateX(15px) rotate(270deg); }
+            100% { transform: translateY(110vh) translateX(0) rotate(360deg); opacity: 0; }
+        }
+
+        /* 4. COULEURS & DÉGRADÉS NOËL */
+        .theme-christmas body { background-color: #fff1f2 !important; /* Fond rosé hiver */ }
+
+        /* Les boutons bleus deviennent ROUGE NOËL */
+        .theme-christmas .bg-blue-600 { 
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important; 
+            border: 1px solid #fca5a5;
+        }
+        
+        /* Les textes bleus deviennent VERT SAPIN */
+        .theme-christmas .text-blue-600, 
+        .theme-christmas .text-blue-500 { 
+            color: #166534 !important; /* Vert foncé */
+            font-weight: 800;
+        }
+
+        /* Fonds clairs (cartes) deviennent légèrement teintés */
+        .theme-christmas .bg-blue-50 { background-color: #fef2f2 !important; border-color: #fecaca !important; }
+        .theme-christmas .border-blue-200 { border-color: #fecaca !important; }
+
+        /* 5. LOGO QUI RESPIRE (PULSE) */
+        .theme-christmas .sidebar-logo {
+            background: linear-gradient(135deg, #15803d 0%, #b91c1c 100%) !important;
+            border: 2px solid #fbbf24; /* Bordure dorée */
+            animation: christmas-pulse 3s infinite ease-in-out;
+        }
+        @keyframes christmas-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); transform: scale(1); }
+            50% { box-shadow: 0 0 20px 10px rgba(220, 38, 38, 0); transform: scale(1.1); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); transform: scale(1); }
+        }
+
+        /* 6. SUCRE D'ORGE (Barres de progression) */
+        .theme-christmas .bg-blue-500, .theme-christmas .h-full.bg-black\/50 {
+            background: repeating-linear-gradient(45deg, #dc2626, #dc2626 10px, #ffffff 10px, #ffffff 20px) !important;
+            background-size: 28px 28px !important;
+            animation: candy-stripe 1s linear infinite !important;
+        }
+        @keyframes candy-stripe { 0% { background-position: 0 0; } 100% { background-position: 28px 0; } }
+
+        /* 7. ADAPTATION TÉLÉPHONE ("Typhons") */
+        @media (max-width: 768px) {
+            /* Sur mobile, le curseur redevient normal (pas de bug tactile) */
+            .theme-christmas * { cursor: auto !important; }
+            
+            /* Les boutons importants respirent tout seuls (car pas de survol) */
+            .theme-christmas button.bg-slate-900, /* Bouton Nouveau */
+            .theme-christmas button.bg-blue-600 { /* Boutons actions */
+                animation: heartbeat 2s infinite !important;
+            }
+            @keyframes heartbeat {
+                0% { transform: scale(1); }
+                10% { transform: scale(1.03); }
+                20% { transform: scale(1); }
+                100% { transform: scale(1); }
+            }
+        }
+
+        /* --- AUTRES THÈMES --- */
+        .theme-summer .bg-blue-600 { background-color: #0ea5e9 !important; }
     </style>
 </head>
 <body>
 
-<div id="app" class="h-screen flex flex-col overflow-hidden text-slate-800">
-
+<div id="app" :class="currentTheme.classes" class="h-screen flex flex-col overflow-hidden text-slate-800 transition-colors duration-500">
+    <div class="pointer-events-none fixed inset-0 z-[100] overflow-hidden">
+        <div v-if="currentTheme.name === 'christmas'">
+            <div v-for="n in 50" :key="n" class="snowflake" :style="{ left: Math.random()*100 + 'vw', animationDuration: (Math.random()*3+2)+'s', animationDelay: Math.random()*2+'s', fontSize: (Math.random()*10+10)+'px' }">❄</div>
+            <div class="absolute bottom-2 right-2 opacity-20 text-9xl transform rotate-12 pointer-events-none">🎄</div>
+        </div>
+        <div v-if="currentTheme.name === 'summer'">
+            <div class="absolute top-[-50px] right-[-50px] w-64 h-64 bg-yellow-300 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
+        </div>
+    </div>
     <div v-if="!user.logged" class="fixed inset-0 bg-slate-900 z-[200] flex items-center justify-center p-4">
         
         <div v-if="!loginAdminSelection" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center fade-in relative overflow-hidden">
@@ -115,7 +232,11 @@
 
         <aside :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'" class="fixed md:relative w-64 bg-white shadow-xl flex flex-col z-40 h-full transition-transform duration-300 ease-in-out">
             <div class="p-6 border-b flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0"><i class="fa-solid fa-calendar-check"></i></div>
+               <div class="sidebar-logo w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0 transition-all duration-500">
+    <i v-if="currentTheme.name === 'christmas'" class="fa-solid fa-tree text-lg"></i>
+    <i v-else-if="currentTheme.name === 'summer'" class="fa-solid fa-sun text-lg"></i>
+    <i v-else class="fa-solid fa-calendar-check"></i>
+</div>
                 <div class="min-w-0">
                     <h1 class="font-bold text-lg leading-tight truncate">RDV Manager</h1>
                     <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-500 uppercase font-bold truncate block">{{ user.name }}</span>
@@ -142,20 +263,29 @@
         </aside>
 
         <main class="flex-1 flex flex-col bg-[#f8fafc] relative overflow-hidden h-full">
-            <header class="bg-white/80 backdrop-blur-sm p-4 shadow-sm flex justify-between items-center z-10 border-b border-slate-200">
-                <div class="flex items-center gap-3">
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden w-10 h-10 bg-white border border-slate-200 rounded-xl text-slate-700 shadow-sm flex items-center justify-center">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
-                    <button @click="startWizard" class="bg-slate-900 hover:bg-slate-800 text-white px-4 md:px-6 py-2.5 rounded-full font-bold shadow-lg flex items-center gap-2 transform active:scale-95 transition text-sm md:text-base">
-                        <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Nouveau RDV</span><span class="md:hidden">Nouveau</span>
-                    </button>
-                </div>
-                <div v-if="user.role==='admin'" class="bg-green-50 border border-green-200 px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-right">
-                    <p class="text-[9px] md:text-[10px] text-green-600 font-bold uppercase tracking-wider flex items-center justify-end gap-1"><i class="fa-regular fa-calendar"></i> {{ currentFullDateLabel }}</p>
-                    <p class="text-lg md:text-xl font-bold text-green-700">{{ formatPrice(stats.ca) }}</p>
-                </div>
-            </header>
+           <header class="bg-white/80 backdrop-blur-sm p-4 shadow-sm flex justify-between items-center z-10 border-b border-slate-200 relative overflow-hidden transition-colors duration-500" :class="currentTheme.name === 'christmas' ? 'border-red-200 bg-red-50/80' : ''">
+    
+    <div class="flex items-center gap-2 md:gap-3">
+        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden w-10 h-10 bg-white border border-slate-200 rounded-xl text-slate-700 shadow-sm flex items-center justify-center hover:bg-slate-50 transition transform active:scale-95 flex-shrink-0">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <button @click="startWizard" class="bg-slate-900 hover:bg-slate-800 text-white px-3 md:px-6 py-2.5 rounded-full font-bold shadow-lg flex items-center gap-2 transform active:scale-95 transition text-xs md:text-base flex-shrink-0">
+            <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Nouveau RDV</span><span class="md:hidden">Nouveau</span>
+        </button>
+        
+        <div v-if="currentTheme.name !== 'default'" class="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 rounded-full bg-white shadow-sm border border-slate-100 animate-fadeIn whitespace-nowrap overflow-hidden max-w-[120px] md:max-w-none">
+            <span class="text-base md:text-lg">{{ currentTheme.icon }}</span>
+            <span class="text-[10px] md:text-xs font-bold text-slate-600 truncate">{{ currentTheme.label }}</span>
+        </div>
+    </div>
+
+    <div v-if="user.role==='admin'" class="bg-green-50 border border-green-200 px-2 md:px-4 py-1 md:py-2 rounded-xl text-right ml-auto flex-shrink-0">
+        <p class="text-[9px] md:text-[10px] text-green-600 font-bold uppercase tracking-wider flex items-center justify-end gap-1"><i class="fa-regular fa-calendar"></i> <span class="hidden md:inline">{{ currentFullDateLabel }}</span></p>
+        <p class="text-sm md:text-xl font-bold text-green-700">{{ formatPrice(stats.ca) }}</p>
+    </div>
+
+</header>
 
             <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
                 <div v-if="view==='dashboard'" class="space-y-6 fade-in">
@@ -913,6 +1043,49 @@
             const pauseReasonSelect = ref('Vacances');
             const showCustomTime = ref(false);
             const mobileMenuOpen = ref(false);
+            // --- LOGIQUE DES THÈMES SAISONNIERS ---
+            const currentTheme = computed(() => {
+                const d = new Date();
+                const month = d.getMonth() + 1; // 1-12
+                const day = d.getDate();
+
+                // 🎄 NOËL (Tout le mois de Décembre)
+                if (month === 12) {
+                    return { 
+                        name: 'christmas', 
+                        label: 'Joyeuses Fêtes', 
+                        icon: '🎅',
+                        classes: 'theme-christmas' 
+                    };
+                }
+
+                // 🥂 NOUVEL AN (1er au 15 Janvier)
+                if (month === 1 && day <= 15) {
+                    return { name: 'newyear', label: 'Bonne Année', icon: '🥂', classes: 'theme-newyear' };
+                }
+
+                // ❤️ SAINT VALENTIN (10 au 15 Février)
+                if (month === 2 && day >= 10 && day <= 15) {
+                    return { name: 'love', label: 'Love is in the air', icon: '❤️', classes: 'theme-love' };
+                }
+
+                // 🎃 HALLOWEEN (15 au 31 Octobre)
+                if (month === 10 && day >= 15) {
+                    return { name: 'halloween', label: 'Bouuh !', icon: '🎃', classes: 'theme-halloween' };
+                }
+
+                // ☀️ ÉTÉ (Juin, Juillet, Août)
+                if (month >= 6 && month <= 8) {
+                    return { name: 'summer', label: 'Mode Été', icon: '😎', classes: 'theme-summer' };
+                }
+
+                // 🐰 PÂQUES (Avril - Approximatif)
+                if (month === 4) {
+                    return { name: 'easter', label: 'Joyeuses Pâques', icon: '🐰', classes: 'theme-easter' };
+                }
+
+                return { name: 'default', label: '', icon: '', classes: '' };
+            });
 
             const welcomeModal = reactive({ open: false, title: '', message: '', icon: '' });
 
@@ -1587,7 +1760,7 @@ const nextRdvLabel = computed(() => {
                 // NEW VARS
                 teamList, newMember, addTeamMember, toggleBlockTeamMember, deleteTeamMember, mobileMenuOpen, welcomeModal,
                 adminNamesList, newAdminName, addAdminName, removeAdminName,
-                newNoteText, addNote,showDiscountInput, allProspectors, dashboardFilters, dashboardLimit, filteredDaily,rdvTodayCount, nextRdvLabel 
+                newNoteText, addNote,showDiscountInput, allProspectors, dashboardFilters, dashboardLimit, filteredDaily,rdvTodayCount, nextRdvLabel, currentTheme
             };
         }
     }).mount('#app');
