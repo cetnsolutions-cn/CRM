@@ -218,45 +218,51 @@
         }
 
         /* =================================================================
-           ❤️ SAINT-VALENTIN : MODE "LOVE GLASS" (Douceur & Passion)
+           ❤️ THÈME SAINT-VALENTIN : MODE "CALME & CHIC" (100% Fixe)
            ================================================================= */
         .theme-love body { 
-            background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%) !important; 
+            background: linear-gradient(to bottom, #fff1f2, #ffe4e6) !important; 
+            color: #881337 !important;
         }
 
-        /* Cartes "Nuage Rose" */
-        .theme-love .bg-white { 
-            background: rgba(255, 255, 255, 0.8) !important;
-            border: 1px solid #fbcfe8 !important;
-            box-shadow: 0 10px 30px rgba(236, 72, 153, 0.15) !important;
-            border-radius: 24px;
+        /* Cartes fixes et propres */
+        .theme-love .bg-white, .theme-love .bg-slate-50 { 
+            background-color: #fff !important;
+            border: 1px solid #fecdd3 !important;
+            box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.1); /* Ombre légère rose */
+            color: #4c0519 !important;
         }
 
-        /* Boutons "Battement de Cœur" */
-        .theme-love .bg-blue-600 { 
-            background: linear-gradient(to right, #ec4899, #e11d48) !important; 
-            border-radius: 50px; /* Boutons très ronds */
-            box-shadow: 0 5px 15px rgba(225, 29, 72, 0.4);
+        /* Textes */
+        .theme-love .text-slate-800 { color: #881337 !important; }
+        .theme-love .text-slate-500 { color: #9f1239 !important; }
+        
+        /* Boutons fixes (Pas de battement de coeur) */
+        .theme-love .bg-blue-600, .theme-love .bg-slate-900 { 
+            background: linear-gradient(135deg, #be123c 0%, #e11d48 100%) !important; 
+            border: none;
+            box-shadow: 0 4px 6px rgba(190, 18, 60, 0.2);
         }
+        
+        /* Survol simple (Juste un changement de couleur, pas de mouvement) */
         .theme-love .bg-blue-600:hover { 
-            animation: heartbeat 1.5s infinite; 
-            background: linear-gradient(to right, #e11d48, #ec4899) !important; 
-        }
-        
-        @keyframes heartbeat {
-            0% { transform: scale(1); }
-            14% { transform: scale(1.1); }
-            28% { transform: scale(1); }
-            42% { transform: scale(1.1); }
-            70% { transform: scale(1); }
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 100%) !important; 
         }
 
-        .theme-love .text-blue-600 { color: #db2777 !important; font-weight: 800; }
-        
-        /* Cursors */
+        /* Accents */
+        .theme-love .text-blue-600 { color: #db2777 !important; }
+        .theme-love .bg-blue-50 { background-color: #fff1f2 !important; border-color: #fda4af !important; }
+
+        /* Logo fixe */
+        .theme-love .sidebar-logo {
+            background: linear-gradient(to bottom right, #fb7185, #be123c) !important;
+            box-shadow: 0 0 0 2px rgba(251, 113, 133, 0.2);
+        }
+
+        /* Curseur standard (pour éviter la fatigue visuelle) */
         @media (min-width: 768px) {
-            .theme-love * { cursor: url('https://img.icons8.com/fluency/32/romance.png'), auto !important; }
-            .theme-love .cursor-pointer { cursor: url('https://img.icons8.com/fluency/32/like.png'), pointer !important; }
+            .theme-love * { cursor: auto !important; }
+            .theme-love .cursor-pointer { cursor: pointer !important; }
         }
 
         /* =================================================================
@@ -363,8 +369,8 @@
             <div class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-purple-900/20 to-transparent pointer-events-none"></div>
         </div>
 
-        <div v-if="currentTheme.name === 'love'">
-            <div v-for="n in 30" :key="n" class="absolute text-pink-400" :style="{ left: Math.random()*100 + 'vw', bottom: '-20px', animation: 'slideUp ' + (Math.random()*5+5) + 's linear infinite', opacity: Math.random()*0.5, fontSize: (Math.random()*20+10)+'px' }">❤️</div>
+       <div v-if="currentTheme.name === 'love'">
+            <div class="absolute bottom-[-30px] right-[-20px] opacity-10 text-[180px] pointer-events-none grayscale-[0.2] rotate-[-15deg]">🌹</div>
         </div>
 
         <div v-if="currentTheme.name === 'summer'">
@@ -414,9 +420,19 @@
 
         <aside :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'" class="fixed md:relative w-64 bg-white shadow-xl flex flex-col z-40 h-full transition-transform duration-300 ease-in-out">
             <div class="p-6 border-b flex items-center gap-3">
-               <div class="sidebar-logo w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0 transition-all duration-500">
+             <div class="sidebar-logo w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0 transition-all duration-500">
     <i v-if="currentTheme.name === 'christmas'" class="fa-solid fa-tree text-lg"></i>
+    
+    <i v-else-if="currentTheme.name === 'love'" class="fa-solid fa-heart text-xl text-white"></i>
+
+    <i v-else-if="currentTheme.name === 'halloween'" class="fa-solid fa-hat-wizard text-lg"></i>
+
+    <i v-else-if="currentTheme.name === 'bastille'" class="fa-solid fa-flag-usa text-lg"></i>
+
+    <i v-else-if="currentTheme.name === 'newyear'" class="fa-solid fa-champagne-glasses text-lg"></i>
+
     <i v-else-if="currentTheme.name === 'summer'" class="fa-solid fa-sun text-lg"></i>
+
     <i v-else class="fa-solid fa-calendar-check"></i>
 </div>
                 <div class="min-w-0">
