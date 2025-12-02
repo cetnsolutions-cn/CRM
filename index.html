@@ -189,7 +189,18 @@
                     </div>
                     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-8">
 <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4">
-                            <h2 class="text-xl font-bold flex items-center gap-3 text-slate-800"><i class="fa-regular fa-clock text-blue-500"></i> Timeline Aujourd'hui</h2>
+                           <h2 class="text-xl font-bold flex items-center gap-3 text-slate-800">
+    <i class="fa-regular fa-clock text-blue-500"></i>
+
+    <span>Timeline Aujourd'hui</span>
+
+    <span
+        class="text-xs md:text-sm font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200 flex items-center gap-1"
+    >
+        <i class="fa-solid fa-calendar-day text-slate-400"></i>
+        {{ rdvTodayCount }} RDV
+    </span>
+</h2>
                             
                             <div class="flex flex-wrap gap-2 w-full xl:w-auto">
                                 <select v-model="dashboardFilters.agencyId" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-blue-500 shadow-sm">
@@ -355,6 +366,13 @@
                                     <div class="text-xs font-bold text-slate-400 uppercase flex items-center gap-1"><i class="fa-regular fa-calendar"></i> {{ formatDateShort(rdv.date) }} à {{ rdv.heure }}</div>
                                     <div class="text-lg font-bold text-slate-800">{{ rdv.nom }}</div>
                                     <div class="text-sm text-blue-600 font-mono">{{ rdv.telephone }}</div>
+                                    <div
+    v-if="getRelativeRdvLabel(rdv)"
+    class="text-[11px] font-bold text-orange-500 mt-1"
+>
+    {{ getRelativeRdvLabel(rdv) }}
+</div>
+                                    
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 mb-3 text-sm text-slate-600 font-medium"><i class="fa-solid fa-car"></i> {{ rdv.modele }}</div>
@@ -1270,6 +1288,12 @@ const showNoShow = () => { currentFilter.value = 'noshow'; view.value = 'list'; 
 
             // 3. FIX DU BUG : On utilise "computed" ici aussi pour forcer l'affichage immédiat
             const sortedDaily = computed(() => displayedDaily.value);
+            
+            
+            
+            // 🔢 Nombre de RDV du jour (en fonction des filtres Timeline)
+// 🔢 Nombre de RDV du jour = même liste que la Timeline
+const rdvTodayCount = computed(() => filteredDaily.value.length);
             // Calculer le nombre de RDV en cours (selon les filtres Agence/User choisis)
             const timelineActiveCount = computed(() => {
                 if (!rdvList.value) return 0;
@@ -1483,7 +1507,7 @@ const confirmCount = computed(() => confirmList.value.length);
                 // NEW VARS
                 teamList, newMember, addTeamMember, toggleBlockTeamMember, deleteTeamMember, mobileMenuOpen, welcomeModal,
                 adminNamesList, newAdminName, addAdminName, removeAdminName,
-                newNoteText, addNote,showDiscountInput, allProspectors, dashboardFilters, dashboardLimit, filteredDaily
+                newNoteText, addNote,showDiscountInput, allProspectors, dashboardFilters, dashboardLimit, filteredDaily,rdvTodayCount 
             };
         }
     }).mount('#app');
