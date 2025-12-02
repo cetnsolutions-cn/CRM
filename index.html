@@ -1188,6 +1188,16 @@
         appId: "1:884603881750:web:816da99e2502225779a837"
     };
     firebase.initializeApp(firebaseConfig);
+    // --- NOUVEAU CODE POUR LA PERSISTANCE INSTANTANÉE ---
+            firebase.firestore().enablePersistence()
+                .catch((err) => {
+                    if (err.code == 'failed-precondition') {
+                        console.warn("La persistance ne peut pas être activée dans cet environnement (peut-être utilisée par un autre onglet).");
+                    } else if (err.code == 'unimplemented') {
+                        console.warn("Le navigateur ne prend pas en charge la persistance (mode privé ou navigateur ancien).");
+                    }
+                });
+            // ----------------------------------------------------
     const db = firebase.firestore();
 
     const { createApp, ref, reactive, computed, onMounted } = Vue;
@@ -1241,6 +1251,11 @@
             const pauseReasonSelect = ref('Vacances');
             const showCustomTime = ref(false);
             const mobileMenuOpen = ref(false);
+            // --- AJOUT MÉTÉO ---
+            const weatherData = ref(null);
+            const weatherLoading = ref(false);
+            const locationCity = ref('Activer Météo');
+            // --- FIN AJOUT MÉTÉO ---
             // --- LOGIQUE DES THÈMES SAISONNIERS ---
             const currentTheme = computed(() => {
                 const d = new Date();
@@ -1920,7 +1935,58 @@ const nextRdvLabel = computed(() => {
             const statusClass = (s) => ({ 'honore': 'bg-green-100 text-green-700', 'pas_venu': 'bg-red-100 text-red-700', 'annule': 'bg-gray-200 text-gray-500', 'a_confirmer': 'bg-orange-100 text-orange-700', 'confirme': 'bg-blue-100 text-blue-700' }[s] || 'bg-gray-100');
             const validateAction = async (r, type) => { if(type==='rappels') await db.collection('rendezvous').doc(r.id).update({ rappelFait:true }); if(type==='confirmations') await db.collection('rendezvous').doc(r.id).update({ statut:'confirme' }); };
             const generateLink = (r, type) => generateMsgLink(r, type);
+// --- FONCTIONS MÉTÉO SIMULÉE (À placer avant le return final) ---
 
+const fetchSimulatedWeather = async (lat, lon) => {
+    // 1. SIMULATION DE LA GÉOLOCALISATION INVERSE (pour le nom de la ville)
+    // Logique simplifiée basée sur la latitude/longitude
+    if (lat > 47 && lon < 0) locationCity.value = 'Nantes';
+    else if (lat > 48) locationCity.value = 'Paris';
+    else locationCity.value = 'Localisation Actuelle';
+
+    // 2. SIMULATION DE LA MÉTÉO (données aléatoires mais réalistes)
+    return new Promise(resolve => {
+        setTimeout(() => {
+            const temp = Math.round(15 + Math.random() * 10 - 5); // Température simulée
+            const conditionKey = Math.floor(Math.random() * 5);
+            const conditions = [
+                { desc: 'Ensoleillé', icon: 'fa-sun', tempClass: 'text-yellow-400' },
+                { desc: 'Nuageux', icon: 'fa-cloud', tempClass: 'text-gray-400' },
+                { desc: 'Averses', icon: 'fa-cloud-showers-heavy', tempClass: 'text-blue-400' },
+                { desc: 'Orages', icon: 'fa-cloud-bolt', tempClass: 'text-red-500' },
+                { desc: 'Couvert', icon: 'fa-cloud-sun', tempClass: 'text-gray-500' },
+            ];
+            resolve({
+                temp: temp,
+                unit: '°C',
+                condition: conditions[conditionKey],
+                timestamp: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+            });
+        }, 1000); // Délai de 1s pour simuler le temps de chargement
+    });
+};
+
+const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+        console.error("Geolocation non supportée.");
+        weatherLoading.value = false;
+        return;
+    }
+
+    weatherLoading.value = true;
+    navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        const data = await fetchSimulatedWeather(lat, lon);
+        weatherData.value = data;
+        weatherLoading.value = false;
+    }, (error) => {
+        console.error("Erreur de Géolocalisation:", error);
+        weatherLoading.value = false;
+    }, { enableHighAccuracy: false, timeout: 5000, maximumAge: 0 });
+};
+
+// --- FIN FONCTIONS MÉTÉO SIMULÉE ---
             return {
                 user, loginEmail, loginPass, view, login, logout, loginAdminSelection, finalizeAdminLogin,rappelsList,
     confirmList,
