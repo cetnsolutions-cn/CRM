@@ -227,10 +227,25 @@
                                         <div class="h-full bg-green-500 transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(34,197,94,0.6)]" :style="{width: getProgressPercent(rdv) + '%'}"></div>
                                     </div>
                                     <div class="text-sm text-slate-500 flex flex-wrap items-center gap-2 md:gap-3 mt-1 font-medium">
-                                        <span class="text-slate-400 font-bold text-xs"><i class="fa-regular fa-calendar"></i> {{ formatDateShort(rdv.date) }}</span>
-                                        <span class="bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600"><i class="fa-solid fa-car text-slate-400"></i> {{ rdv.modele }}</span>
-                                        <span class="flex items-center gap-1 text-xs opacity-70"><img :src="getLogo(rdv.source)" class="w-4 h-4 rounded-sm"> {{ rdv.source }}</span>
-                                        <div class="w-full mt-1 flex flex-wrap gap-2">
+                                       <span class="bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600">
+    <i class="fa-solid fa-car text-slate-400"></i> {{ rdv.modele }}
+</span>
+
+<!-- Source : 1 seul logo + nom -->
+<span class="flex items-center gap-1 text-xs opacity-70">
+    <img :src="getLogo(rdv.source)" class="w-4 h-4 rounded-sm">
+    {{ rdv.source }}
+</span>
+
+<!-- Badge "RDV dans 5 min / 2 h / 3 jours" -->
+<span
+    v-if="getRelativeRdvLabel(rdv)"
+    class="text-[11px] font-bold text-orange-500 uppercase"
+>
+    {{ getRelativeRdvLabel(rdv) }}
+</span>
+
+<div class="w-full mt-1 flex flex-wrap gap-2">
                                             <span class="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                                                 <i class="fa-solid fa-building"></i> {{ getAgenceName(rdv.agenceId) }}
                                             </span>
@@ -304,7 +319,20 @@
                             <tbody class="text-sm">
                                 <tr v-for="rdv in displayedList" :key="rdv.id" @click="openRdvFiche(rdv)" class="border-b hover:bg-blue-50 cursor-pointer transition" :class="{'bg-blue-50': selectedIds.includes(rdv.id)}">
                                     <td v-if="user.role==='admin'" class="p-4 text-center" @click.stop><input type="checkbox" class="custom-checkbox" :checked="selectedIds.includes(rdv.id)" @change="toggleSelection(rdv.id)"></td>
-                                    <td class="p-4"><div class="font-bold text-slate-700">{{ formatDateShort(rdv.date) }}</div><div class="text-xs text-slate-400">{{ rdv.heure }}</div></td>
+                                    <td class="p-4">
+    <div class="font-bold text-slate-700">
+        {{ formatDateShort(rdv.date) }}
+    </div>
+    <div class="text-xs text-slate-400">
+        {{ rdv.heure }}
+    </div>
+    <div
+        v-if="getRelativeRdvLabel(rdv)"
+        class="text-[11px] font-bold text-orange-500 mt-1"
+    >
+        {{ getRelativeRdvLabel(rdv) }}
+    </div>
+</td>
                                     <td class="p-4"><div class="font-bold">{{ rdv.nom }}</div><div class="text-xs text-blue-500 font-mono">{{ rdv.telephone }}</div></td>
                                     <td class="p-4 font-medium">{{ rdv.modele }}</td>
                                     <td class="p-4"><div class="flex items-center gap-2 opacity-80"><img :src="getLogo(rdv.source)" class="logo-img"><span>{{ rdv.source }}</span></div></td>
@@ -1363,6 +1391,50 @@ const confirmCount = computed(() => confirmList.value.length);
             const isLateAndNoStatus = (r) => { if(!r.date || !r.heure) return false; const start = new Date(r.date+'T'+r.heure); const end = new Date(start.getTime() + 60*60*1000); return now.value >= end && ['confirme','a_confirmer'].includes(r.statut); };
             const getProgressPercent = (r) => { if(!r.date || !r.heure) return 0; const start = new Date(r.date+'T'+r.heure).getTime(); const end = start + 3600000; const current = now.value.getTime(); if(current < start) return 0; if(current > end) return 100; return ((current - start) / (end - start)) * 100; };
             const getRdvTimeStatus = (r) => { if(!r.date || !r.heure) return 'futur'; const start = new Date(r.date+'T'+r.heure).getTime(); const current = now.value.getTime(); if(current >= start && current < start + 3600000) return 'en_cours'; if(current < start && (start - current) < 172800000) return 'bientot'; return 'futur'; };
+            const getRelativeRdvLabel = (r) => {
+    if (!r.date || !r.heure) return '';
+
+    const nowDate = now.value ? new Date(now.value) : new Date();
+    const start = new Date(r.date + 'T' + r.heure);
+    const dureeRdvMs = 60 * 60 * 1000; // 1h
+
+    const diffMs = start - nowDate;
+
+    // RDV déjà fini → on n’affiche rien
+    if (diffMs <= -dureeRdvMs) return '';
+
+    // RDV en cours
+    if (diffMs < 0 && diffMs > -dureeRdvMs) {
+        return 'RDV en cours';
+    }
+
+    // RDV à venir
+    const diffMin = Math.round(diffMs / 60000);
+
+    if (diffMin < 1) {
+        return "RDV dans moins d’1 minute";
+    }
+
+    if (diffMin < 60) {
+        return `RDV dans ${diffMin} min`;
+    }
+
+    const diffHours = Math.floor(diffMin / 60);
+    const restMin = diffMin % 60;
+
+    if (diffHours < 24) {
+        if (restMin === 0) {
+            return `RDV dans ${diffHours}h`;
+        }
+        return `RDV dans ${diffHours}h ${restMin}min`;
+    }
+
+    const diffDays = Math.round(diffMin / (24 * 60));
+    if (diffDays === 1) {
+        return 'RDV dans 1 jour';
+    }
+    return `RDV dans ${diffDays} jours`;
+};
             const pendingStatusList = computed(() => { return rdvList.value.filter(r => { if(!['confirme', 'a_confirmer'].includes(r.statut)) return false; if(!r.date || !r.heure) return false; const end = new Date(r.date+'T'+r.heure).getTime() + 3600000; return now.value.getTime() > end; }); });
             const pendingStatusCount = computed(() => pendingStatusList.value.length);
             const displayStatus = (r) => { if(r.statut === 'honore') return user.role==='admin' ? (r.honorBilling==='facture'?'Honoré • Facturé':'Honoré • Non facturé') : 'Honoré'; if(r.statut === 'pas_venu') return 'Pas Venu'; if(r.statut === 'annule') return 'Annulé'; if(r.statut === 'a_confirmer') return 'À Confirmer'; return 'Confirmé'; };
@@ -1377,6 +1449,15 @@ const confirmCount = computed(() => confirmList.value.length);
     confirmCount,
     rappelFilters,
     rappelsDisplay,
+    rappelsList,
+    confirmList,
+    rappelCount,
+    confirmCount,
+     isEnCours,
+    isLateAndNoStatus,
+    getProgressPercent,
+    getRdvTimeStatus,
+    getRelativeRdvLabel,
                 rdvList, agences, sourcesList, stats, sortedDaily, filteredList, displayedList, rappelsList, confirmList, rappelCount, confirmCount,
                 wizard, form, clientModal, settingsModal, cancelModal,
                 rescheduleModal, openRescheduleModal, confirmRescheduleStep1, sendRescheduleSMS, deleteRdv: softDeleteRdv, softDeleteRdv,
