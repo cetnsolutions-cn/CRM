@@ -282,133 +282,154 @@
                     </div>
                 </div>
 
-                <div v-if="view==='list'" class="bg-white rounded-3xl shadow-sm border border-slate-100 h-full flex flex-col overflow-hidden fade-in relative">
-                    <div class="p-4 border-b bg-slate-50 space-y-3">
-                        <div class="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
-                            <div class="relative flex-1">
-                                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
-                                <input v-model="search" placeholder="Rechercher nom, tel, véhicule..." class="w-full pl-10 p-2 border rounded-xl outline-none focus:border-blue-500 bg-white">
-                            </div>
-                            <div v-if="filteredList.length > 0" class="text-xs font-bold text-slate-400 uppercase text-center md:text-right">{{ filteredList.length }} RDV trouvés</div>
-                        </div>
-                        <div class="flex flex-col md:flex-row flex-wrap gap-2 items-stretch md:items-center">
-                            <div class="relative">
-                                <select v-model="listFilters.agenceId" class="w-full md:w-auto appearance-none bg-white border px-4 py-2 pr-8 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-blue-500 cursor-pointer shadow-sm"><option value="">Toutes les agences</option><option v-for="ag in agences" :key="ag.id" :value="ag.id">{{ ag.nom }}</option></select>
-                                <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-xs text-gray-400 pointer-events-none"></i>
-                            </div>
-                            
-                            <div class="relative">
-                                <select v-model="listFilters.prospecteur" class="w-full md:w-auto appearance-none bg-white border px-4 py-2 pr-8 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-blue-500 cursor-pointer shadow-sm">
-                                    <option value="">Tous les prospecteurs</option>
-                                    <option v-for="p in allProspectors" :key="p" :value="p">{{ p }}</option>
-                                </select>
-                                <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-xs text-gray-400 pointer-events-none"></i>
-                            </div>
+               <div v-if="view==='list'" class="bg-white rounded-[32px] shadow-sm border border-slate-100 h-full flex flex-col overflow-hidden fade-in relative transition-all duration-500 font-sans">
+    
+    <div class="bg-white border-b border-slate-100 z-20 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
+        
+        <div class="flex-1 w-full md:w-auto flex items-center gap-4">
+            <button v-if="currentFilter !== 'all' || listFilters.agenceId || listFilters.date || listFilters.prospecteur" @click="resetListFilters" class="bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600 w-10 h-10 rounded-full flex items-center justify-center transition-all group" title="Retour à la recherche">
+                <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition"></i>
+            </button>
+            
+            <div class="relative flex-1 max-w-md group">
+                <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg group-focus-within:text-blue-500 transition"></i>
+                <input 
+                    v-model="search" 
+                    placeholder="Rechercher client, véhicule, tél..." 
+                    class="w-full pl-12 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:border-blue-500 focus:bg-white focus:shadow-md transition-all"
+                >
+                <button v-if="search" @click="search=''" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-500 transition">
+                    <i class="fa-solid fa-circle-xmark text-xl"></i>
+                </button>
+            </div>
+        </div>
 
-                            <input type="date" v-model="listFilters.date" class="bg-white border px-4 py-2 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm w-full md:w-auto">
-                            
-                            <button v-if="currentFilter === 'live'" @click="currentFilter='all'" class="px-4 py-2 rounded-lg text-sm font-bold bg-green-100 text-green-700 border border-green-200 shadow-inner flex items-center justify-center gap-2 animate-pulse"><i class="fa-solid fa-video"></i> EN COURS ({{ activeRdvCount }})</button>
-                            <button v-else @click="currentFilter = (currentFilter==='upcoming'?'all':'upcoming')" :class="currentFilter==='upcoming' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border text-slate-600'" class="px-4 py-2 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2"><i class="fa-solid fa-clock"></i> À venir</button>
-                            
-                            <button v-if="listFilters.agenceId || listFilters.prospecteur || listFilters.date || search || currentFilter!=='all'" @click="resetListFilters" class="px-4 py-2 rounded-lg text-sm font-bold text-red-500 hover:bg-red-50 transition border border-transparent hover:border-red-200"><i class="fa-solid fa-xmark"></i> Effacer</button>
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-center md:justify-end">
+            
+            <button @click="currentFilter = (currentFilter==='upcoming'?'all':'upcoming')" :class="currentFilter==='upcoming' ? 'bg-blue-600 text-white shadow-blue-200 shadow-md' : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600'" class="px-4 py-2 rounded-full text-sm font-bold transition flex items-center gap-2 active:scale-95">
+                <i class="fa-solid fa-clock"></i> À venir
+            </button>
+
+            <button @click="currentFilter = (currentFilter==='live'?'all':'live')" :class="currentFilter==='live' ? 'bg-green-500 text-white shadow-green-200 shadow-md' : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-green-50 hover:border-green-200 hover:text-green-600'" class="px-4 py-2 rounded-full text-sm font-bold transition flex items-center gap-2 active:scale-95 group">
+                <i class="fa-solid fa-clock fa-spin" style="animation-duration: 3s;"></i> 
+                En cours ({{ activeRdvCount }})
+            </button>
+
+            <div class="relative">
+                <select v-model="listFilters.agenceId" class="appearance-none bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-full pl-4 pr-8 py-2 outline-none cursor-pointer transition focus:border-blue-500">
+                    <option value="">🏢 Toutes agences</option>
+                    <option v-for="ag in agences" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
+                </select>
+                <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none"></i>
+            </div>
+
+             <input type="date" v-model="listFilters.date" class="appearance-none bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-full px-4 py-2 outline-none cursor-pointer transition focus:border-blue-500" title="Filtrer par date">
+
+             <button v-if="listFilters.agenceId || listFilters.date || listFilters.prospecteur || currentFilter !== 'all'" @click="resetListFilters" class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-full hover:bg-red-100 transition" title="Effacer tous les filtres">
+                <i class="fa-solid fa-xmark"></i>
+             </button>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 bg-slate-50 relative">
+        
+        <div v-if="filteredList.length === 0" class="flex flex-col items-center justify-center h-full fade-in pb-20">
+            <div v-if="!search && currentFilter === 'all' && !listFilters.agenceId && !listFilters.date" class="text-center max-w-md">
+                <div class="mb-6 p-8 bg-white rounded-[3rem] shadow-xl shadow-blue-50 inline-block animate-bounce-slow relative">
+                    <div class="absolute inset-0 bg-blue-500 opacity-10 blur-2xl rounded-full"></div>
+                    <i class="fa-solid fa-magnifying-glass-location text-6xl text-blue-500 relative z-10"></i>
+                </div>
+                <h2 class="text-3xl font-black text-slate-800 mb-3">Explorez vos RDV</h2>
+                <p class="text-slate-500 font-medium text-lg leading-relaxed mb-8">Utilisez la recherche ou les filtres rapides ci-dessus.</p>
+                <button @click="showUpcoming" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 hover:scale-105 transition-all transform flex items-center gap-3 mx-auto">
+                    <i class="fa-regular fa-calendar-check text-xl"></i>
+                    Voir les prochains RDV
+                </button>
+            </div>
+            <div v-else class="text-center text-slate-400 opacity-70">
+                 <i class="fa-regular fa-face-frown-open text-6xl mb-4"></i>
+                 <p class="font-bold text-xl">Aucun rendez-vous trouvé.</p>
+            </div>
+        </div>
+
+        <div v-else>
+            <div class="flex justify-between items-center mb-4 px-2">
+                 <h3 class="font-bold text-slate-700 text-lg">Résultats</h3>
+                 <span class="text-xs font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">{{ filteredList.length }} RDV trouvé(s)</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 pb-24 md:pb-0">
+                
+                <div v-for="rdv in displayedList" :key="rdv.id" @click="openRdvFiche(rdv)" class="group bg-white rounded-3xl p-5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border-2 border-transparent hover:border-blue-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-pointer transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
+                    
+                    <div v-if="user.role==='admin'" class="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
+                         <input type="checkbox" class="custom-checkbox w-5 h-5 shadow-sm" :checked="selectedIds.includes(rdv.id)" @change="toggleSelection(rdv.id)">
+                    </div>
+                    
+                    <div class="absolute top-4 right-4 z-10">
+                        <div v-if="isEnCours(rdv)" class="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-1 rounded-full font-black text-[10px] uppercase tracking-wider border border-green-100 shadow-sm animate-pulse">
+                            <span class="relative flex h-2 w-2">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            </span>
+                            En Cours
                         </div>
+                         <span v-else :class="statusClass(rdv.statut)" class="badge-status shadow-sm border border-white/50">{{ displayStatus(rdv) }}</span>
                     </div>
-                    <div class="overflow-auto flex-1 p-0 pb-20 hidden md:block">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase sticky top-0 z-10 shadow-sm font-bold">
-                                <tr>
-                                    <th v-if="user.role==='admin'" class="p-4 w-10"><input type="checkbox" class="custom-checkbox" @change="selectAll($event)" :checked="isAllSelected && displayedList.length > 0"></th>
-                                    <th class="p-4">Date</th>
-                                    <th class="p-4">Client</th>
-                                    <th class="p-4">Véhicule</th>
-                                    <th class="p-4">Source</th>
-                                    <th class="p-4">Agence</th>
-                                    <th class="p-4">Créé par</th>
-                                    <th class="p-4">Statut</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-sm">
-                                <tr v-for="rdv in displayedList" :key="rdv.id" @click="openRdvFiche(rdv)" class="border-b hover:bg-blue-50 cursor-pointer transition" :class="{'bg-blue-50': selectedIds.includes(rdv.id)}">
-                                    <td v-if="user.role==='admin'" class="p-4 text-center" @click.stop><input type="checkbox" class="custom-checkbox" :checked="selectedIds.includes(rdv.id)" @change="toggleSelection(rdv.id)"></td>
-                                    <td class="p-4">
-    <div class="font-bold text-slate-700">
-        {{ formatDateShort(rdv.date) }}
-    </div>
-    <div class="text-xs text-slate-400">
-        {{ rdv.heure }}
-    </div>
-    <div
-        v-if="getRelativeRdvLabel(rdv)"
-        class="text-[11px] font-bold text-orange-500 mt-1"
-    >
-        {{ getRelativeRdvLabel(rdv) }}
-    </div>
-</td>
-                                    <td class="p-4"><div class="font-bold">{{ rdv.nom }}</div><div class="text-xs text-blue-500 font-mono">{{ rdv.telephone }}</div></td>
-                                    <td class="p-4 font-medium">{{ rdv.modele }}</td>
-                                    <td class="p-4"><div class="flex items-center gap-2 opacity-80"><img :src="getLogo(rdv.source)" class="logo-img"><span>{{ rdv.source }}</span></div></td>
-                                    <td class="p-4 text-xs font-bold text-blue-600 uppercase">{{ getAgenceName(rdv.agenceId) }}</td>
-                                    <td class="p-4 text-xs font-bold text-slate-500 uppercase">{{ rdv.createdBy || 'Système' }}</td>
-                                    <td class="p-4">
-                                        <div v-if="isEnCours(rdv)" class="status-label-active"><span class="live-dot"></span>En cours</div>
-                                        <span v-else :class="statusClass(rdv.statut)" class="badge-status">{{ displayStatus(rdv) }}</span>
-                                        <div v-if="rdv.geste_commercial" class="mt-1 inline-block bg-red-50 text-red-600 text-[9px] px-1.5 py-0.5 rounded border border-red-100 font-bold uppercase"><i class="fa-solid fa-gift"></i> {{ user.role === 'admin' ? '-' + rdv.geste_commercial + '€' : 'Geste' }}</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="md:hidden flex-1 overflow-y-auto p-4 space-y-3 pb-24 bg-slate-100">
-                        <div v-for="rdv in displayedList" :key="rdv.id" @click="openRdvFiche(rdv)" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 relative">
-                            <div v-if="user.role==='admin'" class="absolute top-4 right-4" @click.stop><input type="checkbox" class="custom-checkbox" :checked="selectedIds.includes(rdv.id)" @change="toggleSelection(rdv.id)"></div>
-                            <div class="flex justify-between items-start mb-2 pr-8">
-                                <div>
-                                    <div class="text-xs font-bold text-slate-400 uppercase flex items-center gap-1"><i class="fa-regular fa-calendar"></i> {{ formatDateShort(rdv.date) }} à {{ rdv.heure }}</div>
-                                    <div class="text-lg font-bold text-slate-800">{{ rdv.nom }}</div>
-                                    <div class="text-sm text-blue-600 font-mono">{{ rdv.telephone }}</div>
-                                    <div
-    v-if="getRelativeRdvLabel(rdv)"
-    class="text-[11px] font-bold text-orange-500 mt-1"
->
-    {{ getRelativeRdvLabel(rdv) }}
-</div>
-                                    
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2 mb-3 text-sm text-slate-600 font-medium"><i class="fa-solid fa-car"></i> {{ rdv.modele }}</div>
-                            <div class="flex justify-between items-end border-t pt-3 mt-2">
-                                <div class="flex flex-col gap-1">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{{ getAgenceName(rdv.agenceId) }}</span>
-                                    <div class="flex items-center gap-1 text-xs opacity-80"><img :src="getLogo(rdv.source)" class="w-4 h-4 rounded-sm"> {{ rdv.source }}</div>
-                                    <span class="text-[10px] text-gray-400 font-bold uppercase mt-1">Par: {{ rdv.createdBy || 'Système' }}</span>
-                                </div>
-                                <div class="flex flex-col items-end gap-1">
-                                    <div v-if="isEnCours(rdv)" class="status-label-active"><span class="live-dot"></span>En cours</div>
-                                    <span v-else :class="statusClass(rdv.statut)" class="badge-status">{{ displayStatus(rdv) }}</span>
-                                    <div v-if="rdv.geste_commercial" class="bg-red-50 text-red-600 text-[9px] px-2 py-0.5 rounded border border-red-100 font-bold uppercase"><i class="fa-solid fa-gift"></i> {{ user.role === 'admin' ? '-' + rdv.geste_commercial + '€' : 'Geste' }}</div>
-                                </div>
+
+                    <div class="flex items-start gap-4 mt-8 md:mt-2">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center font-black text-xl border-2 border-white shadow-sm group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
+                            {{ rdv.civilite === 'M.' ? 'M' : 'F' }}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="font-black text-xl text-slate-800 truncate leading-tight group-hover:text-blue-600 transition">{{ rdv.nom }}</h4>
+                            <div class="text-sm font-mono font-bold text-slate-400 mt-1 flex items-center gap-1">
+                                <i class="fa-solid fa-phone text-[10px]"></i> {{ rdv.telephone }}
                             </div>
                         </div>
                     </div>
                     
-                    <div v-if="displayedList.length < filteredList.length" class="p-4 text-center">
-                        <button @click="displayLimit += 20" class="bg-white border-2 border-slate-200 text-slate-600 px-6 py-3 rounded-xl font-bold hover:bg-slate-50 hover:border-blue-200 hover:text-blue-600 transition shadow-sm w-full md:w-auto">
-                            👇 Voir plus de rendez-vous
-                        </button>
+                    <div class="mt-5 bg-slate-50 rounded-2xl p-3 flex flex-wrap justify-between items-center gap-2 text-sm border border-slate-100 group-hover:bg-blue-50/50 group-hover:border-blue-100 transition">
+                        <span class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-car-side text-slate-400"></i>{{ rdv.modele }}</span>
+                         <span class="text-[10px] font-black text-blue-500 uppercase bg-blue-100/50 px-2 py-1 rounded-md">{{ getAgenceName(rdv.agenceId) }}</span>
                     </div>
 
-                 <div v-if="selectedIds.length > 0" class="absolute bottom-6 left-4 right-4 md:left-6 md:right-6 bg-slate-900 text-white p-4 rounded-2xl shadow-2xl flex flex-col md:flex-row items-center justify-between slide-up z-20 gap-3">
-                        <div class="font-bold pl-2"><span class="text-blue-400 text-xl">{{ selectedIds.length }}</span> sélectionnés</div>
-                        <div class="flex gap-2 w-full md:w-auto justify-end">
-                            
-                            <button @click="openBulkConfirm('soft_delete', 'Envoyer les ' + selectedIds.length + ' RDV à la corbeille')" class="bg-orange-100 text-orange-700 px-3 md:px-4 py-2 rounded-lg font-bold text-xs md:text-sm transition flex-1 md:flex-none shadow-lg hover:bg-orange-200">
-                                <i class="fa-solid fa-trash-can mr-2"></i> Mettre à la corbeille ({{ selectedIds.length }})
-                            </button>
-                            
-                            <button @click="selectedIds=[]" class="ml-2 text-gray-400 hover:text-white px-2 transition">✕</button>
+                    <div class="mt-4 flex justify-between items-center pt-3 border-t border-slate-100 pb-2">
+                        <div class="flex items-center gap-2 text-slate-600 font-bold text-sm">
+                             <i class="fa-regular fa-calendar text-slate-400"></i>
+                             <span>{{ formatDateLong(rdv.date) }}</span>
+                        </div>
+                        <div class="font-bold text-sm text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg group-hover:bg-blue-100 group-hover:text-blue-700 transition">
+                            {{ rdv.heure }}
                         </div>
                     </div>
+                    
+                    <div v-if="getRelativeRdvLabel(rdv) && !isEnCours(rdv)" class="absolute bottom-0 left-0 right-0 bg-orange-50 text-orange-500 text-center text-[10px] font-bold uppercase py-1 border-t border-orange-100">
+                         {{ getRelativeRdvLabel(rdv) }}
+                    </div>
                 </div>
+            </div>
+
+            <div v-if="displayedList.length < filteredList.length" class="p-8 text-center">
+                 <button @click="displayLimit += 20" class="bg-white border-2 border-slate-200 text-slate-500 px-8 py-3 rounded-full font-bold hover:bg-slate-50 hover:border-blue-300 hover:text-blue-600 transition shadow-sm active:scale-95">👇 Charger les suivants</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="selectedIds.length > 0" class="absolute bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-auto bg-slate-900 text-white p-4 rounded-full shadow-2xl flex items-center justify-between gap-6 slide-up z-[60] border border-slate-800">
+        <div class="font-bold pl-2 flex items-center gap-2"><span class="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">{{ selectedIds.length }}</span> <span class="hidden md:inline">sélectionnés</span></div>
+        <div class="flex gap-2">
+            <button @click="openBulkConfirm('soft_delete', 'Mettre à la corbeille ?')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-bold text-sm transition flex items-center gap-2 shadow-lg shadow-red-500/30 active:scale-95">
+                <i class="fa-solid fa-trash-can"></i> <span class="hidden md:inline">Corbeille</span>
+            </button>
+            <button @click="selectedIds=[]" class="text-slate-400 hover:text-white w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800 transition" title="Annuler la sélection">✕</button>
+        </div>
+    </div>
+</div>
+
+    <!-- 🔻 le reste de la liste (table + mobile) NE BOUGE PAS -->
+    ...
+</div>
 
  <div v-if="view==='trash'" class="bg-white rounded-3xl shadow-sm border border-slate-100 h-full flex flex-col overflow-hidden fade-in relative">
                     
@@ -1106,30 +1127,68 @@ const showNoShow = () => { currentFilter.value = 'noshow'; view.value = 'list'; 
             const activeRdvCount = computed(() => rdvList.value.filter(r => isEnCours(r)).length);
 
             const filteredList = computed(() => { 
-                let l = rdvList.value.filter(r => r.statut !== 'poubelle'); 
+    let l = rdvList.value.filter(r => r.statut !== 'poubelle'); 
                 
-                // Filtres de base
-                if(listFilters.agenceId) { l = l.filter(r => r.agenceId === listFilters.agenceId); } 
-                if(listFilters.prospecteur) { l = l.filter(r => r.createdBy === listFilters.prospecteur); }
-                if(listFilters.date) { l = l.filter(r => r.date === listFilters.date); } 
+    // Filtres de base
+    if (listFilters.agenceId) {
+        l = l.filter(r => r.agenceId === listFilters.agenceId);
+    } 
+    if (listFilters.prospecteur) {
+        l = l.filter(r => r.createdBy === listFilters.prospecteur);
+    }
+    if (listFilters.date) {
+        l = l.filter(r => r.date === listFilters.date);
+    } 
                 
-                // Filtres Spéciaux (Boutons Dashboard)
-                if(currentFilter.value === 'upcoming') { 
-                    if(!listFilters.date) { const today = new Date().toISOString().split('T')[0]; l = l.filter(r => r.statut === 'confirme' && r.date >= today); } 
-                } 
-                else if (currentFilter.value === 'live') {
-                    l = l.filter(r => isEnCours(r));
-                }
-                else if (currentFilter.value === 'honored') { // NOUVEAU
-                    l = l.filter(r => r.statut === 'honore');
-                }
-                else if (currentFilter.value === 'noshow') { // NOUVEAU
-                    l = l.filter(r => r.statut === 'pas_venu');
-                }
+    // Filtres Spéciaux (Boutons Dashboard)
+    if (currentFilter.value === 'upcoming') { 
+        if (!listFilters.date) { 
+            const today = new Date().toISOString().split('T')[0]; 
+            l = l.filter(r => r.statut === 'confirme' && r.date >= today); 
+        } 
+    } 
+    else if (currentFilter.value === 'live') {
+        l = l.filter(r => isEnCours(r));
+    }
+    else if (currentFilter.value === 'honored') {
+        l = l.filter(r => r.statut === 'honore');
+    }
+    else if (currentFilter.value === 'noshow') {
+        l = l.filter(r => r.statut === 'pas_venu');
+    }
 
-                if(search.value) { const s = search.value.toLowerCase(); const sDigits = normalizePhone(search.value); l = l.filter(r => (r.nom || '').toLowerCase().includes(s) || (r.modele || '').toLowerCase().includes(s) || (sDigits && normalizePhone(r.telephone).includes(sDigits))); } 
-                return l.sort((a,b) => b.date.localeCompare(a.date)); 
-            });
+    // 🔍 Recherche (nom / véhicule / téléphone)
+    if (search.value) { 
+        const s = search.value.toLowerCase(); 
+        const sDigits = normalizePhone(search.value); 
+
+        l = l.filter(r => 
+            (r.nom || '').toLowerCase().includes(s) || 
+            (r.modele || '').toLowerCase().includes(s) || 
+            (sDigits && normalizePhone(r.telephone).includes(sDigits))
+        ); 
+    } 
+
+    // 🆕 NOUVEAU : si on est en mode "Tous" + aucun filtre + aucune recherche → on n'affiche rien
+    const noBaseFilter =
+        currentFilter.value === 'all' &&
+        !listFilters.agenceId &&
+        !listFilters.prospecteur &&
+        !listFilters.date &&
+        !search.value;
+
+    if (noBaseFilter) {
+        return [];
+    }
+
+    // Tri par date puis par heure
+    return l.sort((a, b) => {
+        if (a.date !== b.date) {
+            return a.date.localeCompare(b.date);
+        }
+        return (a.heure || '').localeCompare(b.heure || '');
+    });
+});
             // PAGINATION
             const displayedList = computed(() => filteredList.value.slice(0, displayLimit.value));
 
@@ -1459,6 +1518,30 @@ const confirmCount = computed(() => confirmList.value.length);
     }
     return `RDV dans ${diffDays} jours`;
 };
+// 🔜 Prochain RDV d'aujourd'hui (texte "RDV dans X min")
+const nextRdvLabel = computed(() => {
+    if (!rdvList.value || rdvList.value.length === 0) return '';
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nowDate = now.value ? new Date(now.value) : new Date();
+
+    // RDV d'aujourd'hui, non poubelle, avec une heure, et dans le futur
+    const candidates = rdvList.value
+        .filter(r =>
+            r.date === todayStr &&
+            r.statut !== 'poubelle' &&
+            r.heure
+        )
+        .map(r => ({ rdv: r, start: new Date(r.date + 'T' + r.heure) }))
+        .filter(o => o.start > nowDate);
+
+    if (candidates.length === 0) return '';
+
+    // On prend le plus proche dans le futur
+    candidates.sort((a, b) => a.start - b.start);
+
+    return getRelativeRdvLabel(candidates[0].rdv);
+});
             const pendingStatusList = computed(() => { return rdvList.value.filter(r => { if(!['confirme', 'a_confirmer'].includes(r.statut)) return false; if(!r.date || !r.heure) return false; const end = new Date(r.date+'T'+r.heure).getTime() + 3600000; return now.value.getTime() > end; }); });
             const pendingStatusCount = computed(() => pendingStatusList.value.length);
             const displayStatus = (r) => { if(r.statut === 'honore') return user.role==='admin' ? (r.honorBilling==='facture'?'Honoré • Facturé':'Honoré • Non facturé') : 'Honoré'; if(r.statut === 'pas_venu') return 'Pas Venu'; if(r.statut === 'annule') return 'Annulé'; if(r.statut === 'a_confirmer') return 'À Confirmer'; return 'Confirmé'; };
@@ -1507,7 +1590,7 @@ const confirmCount = computed(() => confirmList.value.length);
                 // NEW VARS
                 teamList, newMember, addTeamMember, toggleBlockTeamMember, deleteTeamMember, mobileMenuOpen, welcomeModal,
                 adminNamesList, newAdminName, addAdminName, removeAdminName,
-                newNoteText, addNote,showDiscountInput, allProspectors, dashboardFilters, dashboardLimit, filteredDaily,rdvTodayCount 
+                newNoteText, addNote,showDiscountInput, allProspectors, dashboardFilters, dashboardLimit, filteredDaily,rdvTodayCount, nextRdvLabel 
             };
         }
     }).mount('#app');
