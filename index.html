@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RDV CRM - V26 Clean & Live</title>
+    <title>RDV CRM - V30 Ultimate</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -41,7 +41,7 @@
 
         .logo-img { width: 20px; height: 20px; object-fit: contain; border-radius: 4px; }
         .badge-status { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-        .custom-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: #2563EB; }
+        .custom-checkbox { width: 24px; height: 24px; cursor: pointer; accent-color: #2563EB; z-index: 50; position: relative; }
 
         /* Style spécifique du Date Picker V22 */
         .date-card {
@@ -62,6 +62,41 @@
             70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
             100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
+        
+        /* Animation BORDURE CARD (Demandée) */
+        @keyframes border-pulse { 
+            0% { border-color: rgba(34, 197, 94, 0.2); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); } 
+            50% { border-color: rgba(34, 197, 94, 1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 
+            100% { border-color: rgba(34, 197, 94, 0.2); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } 
+        }
+        .live-animation { animation: border-pulse 2s infinite; border: 2px solid #22c55e !important; }
+
+        /* --- ANIMATION BULLES DE DISCUSSION --- */
+        @keyframes bubble-pop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes bubble-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        .talking-bubbles {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            display: flex;
+            gap: 4px;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .bubble {
+            font-size: 16px;
+            animation: bubble-pop 0.5s ease-out forwards, bubble-float 2s ease-in-out infinite;
+        }
+        .bubble-1 { color: #3b82f6; animation-delay: 0s, 0.5s; } /* Bleu */
+        .bubble-2 { color: #22c55e; animation-delay: 0.3s, 0.8s; transform: scaleX(-1); } /* Vert, miroir */
+
         .status-label-active {
             font-size: 10px; font-weight: 900; text-transform: uppercase; color: #22c55e;
             display: flex; align-items: center; padding: 4px 8px; border-radius: 6px;
@@ -480,7 +515,10 @@
 
     <div v-if="user.role==='admin'" class="bg-green-50 border border-green-200 px-2 md:px-4 py-1 md:py-2 rounded-xl text-right ml-auto flex-shrink-0">
         <p class="text-[9px] md:text-[10px] text-green-600 font-bold uppercase tracking-wider flex items-center justify-end gap-1"><i class="fa-regular fa-calendar"></i> <span class="hidden md:inline">{{ currentFullDateLabel }}</span></p>
-        <p class="text-sm md:text-xl font-bold text-green-700">{{ formatPrice(stats.ca) }}</p>
+        <div class="flex flex-col items-end">
+            <p class="text-sm md:text-xl font-bold text-green-700 leading-none">{{ formatPrice(stats.ca) }} <span class="text-[10px] text-green-500 uppercase">Mois</span></p>
+            <p class="text-xs font-bold text-green-600 leading-none mt-1">{{ formatPrice(stats.ca_daily) }} <span class="text-[9px] uppercase opacity-70">Jour</span></p>
+        </div>
     </div>
 
 </header>
@@ -493,7 +531,7 @@
                             
                            
                         </div>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 min-w-[300px] relative overflow-hidden" :class="conversionRateColor"><div class="absolute inset-0 bg-white opacity-80 z-0"></div><div class="z-10 text-5xl emoji-bounce filter drop-shadow-md">{{ conversionEmoji }}</div><div class="z-10 flex-1"><p class="text-xs font-bold uppercase tracking-widest opacity-60">Taux de conversion</p><div class="flex items-baseline gap-2"><span class="text-4xl font-black">{{ conversionRate }}%</span><span class="text-xs font-medium opacity-70">Honorés / Total</span></div><div class="w-full bg-black/10 h-1.5 rounded-full mt-1 overflow-hidden"><div class="h-full bg-black/50 transition-all duration-1000" :style="{width: conversionRate + '%'}"></div></div></div></div>
+                        <div @click="openStatsModal" class="cursor-pointer hover:scale-[1.02] transition-transform bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 min-w-[300px] relative overflow-hidden" :class="conversionRateColor"><div class="absolute inset-0 bg-white opacity-80 z-0"></div><div class="z-10 text-5xl emoji-bounce filter drop-shadow-md">{{ conversionEmoji }}</div><div class="z-10 flex-1"><p class="text-xs font-bold uppercase tracking-widest opacity-60">Taux de conversion</p><div class="flex items-baseline gap-2"><span class="text-4xl font-black">{{ conversionRate }}%</span><span class="text-xs font-medium opacity-70">Honorés / Total</span></div><div class="w-full bg-black/10 h-1.5 rounded-full mt-1 overflow-hidden"><div class="h-full bg-black/50 transition-all duration-1000" :style="{width: conversionRate + '%'}"></div></div></div></div>
                     </div>
                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                         <div @click="showUpcoming" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-300 cursor-pointer transition group">
@@ -549,17 +587,20 @@
                                 </button>
                             </div>
                         </div>                        <div class="space-y-4 relative"><div class="absolute left-[35px] top-4 bottom-4 w-0.5 bg-slate-100 z-0"></div>
-                            <div v-for="rdv in sortedDaily" :key="rdv.id" @click="openRdvFiche(rdv)" class="relative z-10 flex flex-col md:flex-row md:items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-lg cursor-pointer transition group gap-2 md:gap-0">
-                                <div class="flex items-center w-full md:w-auto">
+                            <div v-for="rdv in sortedDaily" :key="rdv.id" @click="openRdvFiche(rdv)" :class="isEnCours(rdv) ? 'live-animation' : ''" class="relative z-10 flex flex-col md:flex-row md:items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-lg cursor-pointer transition group gap-2 md:gap-0 overflow-hidden">
+                                <div v-if="isEnCours(rdv)" class="talking-bubbles"><i class="fa-solid fa-comment-dots bubble bubble-1"></i><i class="fa-solid fa-comment-dots bubble bubble-2"></i></div>
+                                <div class="flex items-center w-full md:w-auto relative z-10">
                                     <div class="w-16 md:w-20 font-bold text-lg text-slate-500 group-hover:text-blue-600 transition text-center bg-white rounded-xl py-2 mr-4 shadow-sm border border-slate-100 flex-shrink-0">{{ rdv.heure }}</div>
                                     <div class="font-bold text-slate-800 text-lg flex items-center gap-2 md:hidden">{{ rdv.civilite }} {{ rdv.nom }} <i v-if="isEnCours(rdv)" class="fa-solid fa-circle text-[10px] text-green-500 animate-pulse"></i></div>
                                 </div>
-                                <div class="flex-1 min-w-0 md:ml-4">
+                                <div class="flex-1 min-w-0 md:ml-4 relative z-10">
                                     <div class="font-bold text-slate-800 text-lg hidden md:flex items-center gap-2">
                                         {{ rdv.civilite }} {{ rdv.nom }} 
                                         <i v-if="isEnCours(rdv)" class="fa-solid fa-circle text-[10px] text-green-500 animate-pulse"></i>
+                                        <span v-if="rdv.tag === 'OK M'" class="ml-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase shadow-sm">OK M</span>
+                                        <span v-if="rdv.geste_commercial && user.role === 'admin'" class="ml-2 text-red-500 text-xl animate-bounce-slow" title="Geste Commercial appliqué">🎁</span>
                                         <span v-if="rdv.geste_commercial" class="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full border border-red-200 font-bold animate-fadeIn">
-                                            <i class="fa-solid fa-gift"></i> {{ user.role === 'admin' ? '-' + rdv.geste_commercial + '€' : 'Geste co.' }}
+                                            -{{ rdv.geste_commercial }}€
                                         </span>
                                     </div>
                                     <div v-if="isEnCours(rdv)" class="w-full max-w-xs h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden shadow-inner">
@@ -594,7 +635,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-center justify-between md:justify-end mt-2 md:mt-0">
+                                <div class="flex items-center justify-between md:justify-end mt-2 md:mt-0 relative z-10">
                                     <div v-if="isEnCours(rdv)" class="status-label-active mr-4"><span class="live-dot"></span>Rendez-vous en cours</div>
                                     <div v-else-if="isLateAndNoStatus(rdv)" class="mr-4 bg-purple-100 text-purple-600 px-3 py-1 rounded-full font-bold text-xs animate-pulse border border-purple-200 shadow-sm"><i class="fa-solid fa-clipboard-question"></i> STATUT ?</div>
                                     <span v-else :class="statusClass(rdv.statut)" class="badge-status shadow-sm">{{ displayStatus(rdv) }}</span>
@@ -688,10 +729,10 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 pb-24 md:pb-0">
                 
-                <div v-for="rdv in displayedList" :key="rdv.id" @click="openRdvFiche(rdv)" class="group bg-white rounded-3xl p-5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border-2 border-transparent hover:border-blue-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-pointer transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
-                    
-                    <div v-if="user.role==='admin'" class="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
-                         <input type="checkbox" class="custom-checkbox w-5 h-5 shadow-sm" :checked="selectedIds.includes(rdv.id)" @change="toggleSelection(rdv.id)">
+                <div v-for="rdv in displayedList" :key="rdv.id" @click="openRdvFiche(rdv)" :class="isEnCours(rdv) ? 'live-animation' : ''" class="group bg-white rounded-3xl p-5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border-2 border-transparent hover:border-blue-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-pointer transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
+                    <div v-if="isEnCours(rdv)" class="talking-bubbles"><i class="fa-solid fa-comment-dots bubble bubble-1"></i><i class="fa-solid fa-comment-dots bubble bubble-2"></i></div>
+                    <div v-if="user.role==='admin'" class="absolute top-4 left-4 z-50 opacity-100 group-hover:opacity-100 transition-opacity" @click.stop>
+                         <input type="checkbox" class="custom-checkbox w-6 h-6 shadow-sm border-2 border-slate-300 rounded" :checked="selectedIds.includes(rdv.id)" @change="toggleSelection(rdv.id)">
                     </div>
                     
                     <div class="absolute top-4 right-4 z-10">
@@ -705,24 +746,28 @@
                          <span v-else :class="statusClass(rdv.statut)" class="badge-status shadow-sm border border-white/50">{{ displayStatus(rdv) }}</span>
                     </div>
 
-                    <div class="flex items-start gap-4 mt-8 md:mt-2">
+                    <div class="flex items-start gap-4 mt-8 md:mt-2 relative z-10">
                         <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center font-black text-xl border-2 border-white shadow-sm group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
                             {{ rdv.civilite === 'M.' ? 'M' : 'F' }}
                         </div>
                         <div class="min-w-0 flex-1">
-                            <h4 class="font-black text-xl text-slate-800 truncate leading-tight group-hover:text-blue-600 transition">{{ rdv.nom }}</h4>
+                            <h4 class="font-black text-xl text-slate-800 truncate leading-tight group-hover:text-blue-600 transition">
+                                {{ rdv.nom }} 
+                                <span v-if="rdv.tag === 'OK M'" class="ml-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase shadow-sm align-middle">OK M</span>
+                                <span v-if="rdv.geste_commercial && user.role === 'admin'" class="ml-1 text-red-500 text-lg align-middle" title="Geste Commercial appliqué">🎁</span>
+                            </h4>
                             <div class="text-sm font-mono font-bold text-slate-400 mt-1 flex items-center gap-1">
                                 <i class="fa-solid fa-phone text-[10px]"></i> {{ rdv.telephone }}
                             </div>
                         </div>
                     </div>
                     
-                    <div class="mt-5 bg-slate-50 rounded-2xl p-3 flex flex-wrap justify-between items-center gap-2 text-sm border border-slate-100 group-hover:bg-blue-50/50 group-hover:border-blue-100 transition">
+                    <div class="mt-5 bg-slate-50 rounded-2xl p-3 flex flex-wrap justify-between items-center gap-2 text-sm border border-slate-100 group-hover:bg-blue-50/50 group-hover:border-blue-100 transition relative z-10">
                         <span class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-car-side text-slate-400"></i>{{ rdv.modele }}</span>
                          <span class="text-[10px] font-black text-blue-500 uppercase bg-blue-100/50 px-2 py-1 rounded-md">{{ getAgenceName(rdv.agenceId) }}</span>
                     </div>
 
-                    <div class="mt-4 flex justify-between items-center pt-3 border-t border-slate-100 pb-2">
+                    <div class="mt-4 flex justify-between items-center pt-3 border-t border-slate-100 pb-2 relative z-10">
                         <div class="flex items-center gap-2 text-slate-600 font-bold text-sm">
                              <i class="fa-regular fa-calendar text-slate-400"></i>
                              <span>{{ formatDateLong(rdv.date) }}</span>
@@ -848,7 +893,7 @@
                     ? 'bg-red-600 text-white border-red-600 shadow'
                     : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'"
             >
-                Rappels Aujourd'hui
+                Rappels Aujourd'hui <span v-if="rappelsJourCount > 0" class="ml-1 bg-white text-red-600 px-1.5 rounded-full text-[10px] shadow-sm">{{ rappelsJourCount }}</span>
             </button>
             <button
                 @click="rappelFilters.day = 'tomorrow'"
@@ -857,7 +902,7 @@
                     ? 'bg-red-600 text-white border-red-600 shadow'
                     : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'"
             >
-                Rappels Demain (Veille)
+                Rappels Demain (Veille) <span v-if="rappelsVeilleCount > 0" class="ml-1 bg-white text-red-600 px-1.5 rounded-full text-[10px] shadow-sm">{{ rappelsVeilleCount }}</span>
             </button>
         </div>
 
@@ -961,15 +1006,27 @@
             <div v-if="getRdvTimeStatus(clientModal.rdv) === 'en_cours'" class="bg-green-500 text-white text-center py-1 font-bold text-xs uppercase tracking-widest animate-pulse shadow-lg">⚡ En Cours ⚡</div>
             <div v-else-if="getRdvTimeStatus(clientModal.rdv) === 'bientot'" class="bg-orange-400 text-white text-center py-1 font-bold text-xs uppercase tracking-widest">⚠️ Arrive bientôt</div>
             <div class="bg-gradient-to-r from-slate-800 to-slate-900 p-6 md:p-8 text-white relative">
-                <button @click="clientModal.open=false" class="absolute top-4 right-4 md:top-6 md:right-6 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition backdrop-blur-sm">✕</button>
+                <!-- Bouton Fermer Modale (Amélioré) -->
+                <button @click="clientModal.open=false" class="absolute top-4 right-4 md:top-6 md:right-6 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition backdrop-blur-md z-50 cursor-pointer shadow-lg text-white font-bold text-xl">✕</button>
+                <!-- NOUVEAU : Bouton Poubelle en haut à droite -->
+                 <button @click="softDeleteRdv(clientModal.rdv)" class="absolute top-4 right-16 md:top-6 md:right-20 w-12 h-12 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center transition backdrop-blur-md z-50 cursor-pointer shadow-lg text-white font-bold text-lg" title="Mettre à la corbeille"><i class="fa-solid fa-trash-can"></i></button>
+
                 <div class="flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
                     <div :class="{'live-pulse border-green-400': getRdvTimeStatus(clientModal.rdv)==='en_cours'}" class="w-16 h-16 md:w-20 md:h-20 bg-white/10 border border-white/20 rounded-3xl flex items-center justify-center text-3xl font-bold backdrop-blur-sm shadow-xl transition-all duration-500">{{ clientModal.rdv.civilite === 'M.' ? 'M' : 'F' }}</div>
-                    <div class="flex-1 w-full">
-                        <input v-model="clientModal.rdv.nom" class="bg-transparent text-2xl md:text-3xl font-bold text-white placeholder-white/40 w-full outline-none border-b border-transparent focus:border-white/30 p-0 text-center md:text-left">
-                        <input type="tel" inputmode="numeric" pattern="[0-9]*" :value="clientModal.rdv.telephone" @input="onModalPhoneInput" class="bg-transparent text-blue-300 font-mono text-lg md:text-xl w-full outline-none opacity-90 mt-1 text-center md:text-left">
+                    <div class="flex-1 w-full relative">
+                        
+                        <div class="text-2xl md:text-3xl font-bold text-white mb-1 flex items-center gap-3">
+                            {{ clientModal.rdv.nom }} 
+                            <!-- Bouton Crayon (Déplacé ici) -->
+                            <button @click="openEdit(clientModal.rdv)" class="text-sm bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full flex items-center justify-center transition" title="Modifier infos client">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                        </div>
+                        <div class="font-mono text-lg md:text-xl text-blue-300 opacity-90">{{ clientModal.rdv.telephone }}</div>
+                        
                         <div class="flex gap-3 mt-4 justify-center md:justify-start">
                             <a :href="'tel:' + normalizePhone(clientModal.rdv.telephone)" class="bg-green-500 hover:bg-green-600 text-white rounded-xl px-4 py-2 font-bold flex items-center gap-2 shadow-lg transform active:scale-95 transition text-sm"><i class="fa-solid fa-phone"></i> Appeler</a>
-                            <a :href="generateMsgLink(clientModal.rdv, 'confirm')" target="_blank" class="bg-blue-500 hover:bg-blue-600 text-white rounded-xl px-4 py-2 font-bold flex items-center gap-2 shadow-lg transform active:scale-95 transition text-sm"><i class="fa-solid fa-paper-plane"></i> SMS</a>
+                            <a :href="generateMsgLink(clientModal.rdv, 'confirm')" target="_blank" class="bg-blue-500 hover:bg-blue-600 text-white rounded-xl px-4 py-2 font-bold flex items-center gap-2 shadow-lg transform active:scale-95 transition text-sm"><i class="fa-solid fa-paper-plane"></i> Renvoyer confirmation client</a>
                         </div>
                     </div>
                 </div>
@@ -978,13 +1035,14 @@
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
                     <div class="flex items-center gap-3">
                         <span :class="statusClass(clientModal.rdv.statut)" class="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wide">{{ displayStatus(clientModal.rdv) }}</span>
+                        <span v-if="clientModal.rdv.tag === 'OK M'" class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase shadow-sm">OK M</span>
                     </div>
                     <div class="text-xs md:text-sm font-bold">{{ getAgenceName(clientModal.rdv.agenceId) }}</div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Véhicule</label>
-                        <input v-model="clientModal.rdv.modele" class="w-full text-lg font-bold text-slate-800 outline-none placeholder-slate-300">
+                        <div class="text-lg font-bold text-slate-800">{{ clientModal.rdv.modele }}</div>
                     </div>
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Source</label>
@@ -999,7 +1057,7 @@
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Date & Heure du RDV</label>
                         <div class="text-xl font-bold text-slate-800">{{ formatDateFr(clientModal.rdv.date) }} à {{ clientModal.rdv.heure }}</div>
                     </div>
-                    <button @click="openRescheduleModal(clientModal.rdv)" class="w-full md:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm transition">📅 Modifier Date/Heure</button>
+                    <button @click="openRescheduleModal(clientModal.rdv)" class="w-full md:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm transition">📅 Reporter Rendez-vous</button>
                 </div>
                 
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
@@ -1009,12 +1067,20 @@
                         <div v-if="clientModal.rdv.note && (!clientModal.rdv.notes || clientModal.rdv.notes.length === 0)" class="bg-yellow-50 p-3 rounded-xl text-sm text-slate-700 italic border border-yellow-100">
                             {{ clientModal.rdv.note }} <span class="text-xs text-yellow-400 block mt-1">(Ancienne note)</span>
                         </div>
-                        <div v-for="(n, idx) in clientModal.rdv.notes" :key="idx" class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-sm">
-                            <div class="flex justify-between items-start mb-1">
-                                <span class="font-bold text-blue-800 text-xs">{{ n.author }}</span>
-                                <span class="text-[10px] text-blue-400">{{ formatDateFr(n.date) }}</span>
+                        <div v-for="(n, idx) in clientModal.rdv.notes" :key="idx" class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-sm flex justify-between items-start group">
+                            <div>
+                                <div class="flex justify-between items-start mb-1 gap-2">
+                                    <span class="font-bold text-blue-800 text-xs">{{ n.author }}</span>
+                                </div>
+                                <div class="text-slate-700">{{ n.text }}</div>
                             </div>
-                            <div class="text-slate-700">{{ n.text }}</div>
+                             <div class="flex flex-col items-end flex-shrink-0 ml-2">
+                                 <span class="text-[10px] text-blue-400 whitespace-nowrap">{{ formatDateFr(n.date) }}</span>
+                                 <!-- Bouton Supprimer Note (Croix Rouge en dessous de l'heure) -->
+                                 <button @click="deleteNote(clientModal.rdv, idx)" class="text-red-400 hover:text-red-600 transition mt-1" title="Supprimer la note">
+                                    <i class="fa-solid fa-xmark text-sm font-bold"></i>
+                                </button>
+                             </div>
                         </div>
                     </div>
 
@@ -1027,37 +1093,177 @@
                 <div class="flex flex-col gap-4">
                     <div class="bg-slate-100 p-4 rounded-2xl">
                         <div class="flex gap-2 mb-2">
-                            <button @click="updateStatus(clientModal.rdv, 'honor_fact')" class="flex-1 bg-white border border-green-200 text-green-700 py-2 rounded-lg text-xs font-bold shadow-sm">Honoré</button>
+                            <button @click="openHonorCheck(clientModal.rdv)" class="flex-1 bg-white border border-green-200 text-green-700 py-2 rounded-lg text-xs font-bold shadow-sm">Honoré</button>
                             <button @click="updateStatus(clientModal.rdv, 'noshow')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-xs font-bold shadow-sm">Lapin</button>
                         </div>
                         <button v-if="['honore','pas_venu','annule'].includes(clientModal.rdv.statut)" @click="updateStatus(clientModal.rdv, 'reset')" class="w-full bg-slate-200 text-slate-600 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-slate-300 transition"><i class="fa-solid fa-rotate-left"></i> Réinitialiser le statut</button>
                         
-                        <div class="mt-4 border-t pt-4">
-                            <button @click="showDiscountInput = !showDiscountInput" :class="showDiscountInput ? 'bg-red-100 text-red-600' : 'bg-white text-slate-600'" class="w-full py-3 rounded-xl font-bold text-sm shadow-sm border-2 border-slate-200 flex items-center justify-center gap-2 transition hover:bg-red-50 hover:border-red-200">
-                                <i class="fa-solid fa-gift text-xl"></i> {{ showDiscountInput ? 'Masquer Geste Commercial' : 'Faire un geste commercial' }}
+                        <div class="mt-4 border-t pt-4" v-if="user.role==='admin'">
+                            <button @click="openDiscountModal" class="w-full py-3 rounded-xl font-bold text-sm shadow-sm border-2 border-red-200 bg-white text-red-500 flex items-center justify-center gap-2 transition hover:bg-red-50 hover:text-red-600">
+                                <i class="fa-solid fa-gift text-xl"></i> 🎁 Faire un geste commercial
                             </button>
-
-                            <div v-if="showDiscountInput || clientModal.rdv.geste_commercial" class="mt-3 flex flex-col gap-2 animate-fadeIn bg-white p-3 rounded-xl border border-red-100">
-                                <div class="flex items-center gap-4">
-                                    <label class="text-xs font-bold text-red-400 uppercase whitespace-nowrap">Montant (€)</label>
-                                    <input v-model.number="clientModal.rdv.geste_commercial" type="number" class="w-full p-2 border-2 border-red-100 rounded-lg font-bold text-red-600 text-center outline-none focus:border-red-300" placeholder="0">
-                                </div>
-                                <input v-model="clientModal.rdv.motif_geste" type="text" class="w-full p-2 border-2 border-red-100 rounded-lg font-bold text-slate-600 text-center outline-none focus:border-red-300" placeholder="Motif (ex: retard, sympa...)">
+                            <div v-if="clientModal.rdv.geste_commercial" class="mt-2 text-center text-xs font-bold text-red-500">
+                                Geste appliqué : -{{ clientModal.rdv.geste_commercial }}€ ({{ clientModal.rdv.motif_geste }})
+                                <!-- BOUTON SUPPRIMER LE GESTE DÉPLACÉ ICI -->
+                                <button @click="removeDiscount" class="ml-2 text-slate-400 hover:text-red-600 font-bold underline">Supprimer</button>
                             </div>
                         </div>
                     </div>
                     <div class="flex gap-4">
-                        <button @click="softDeleteRdv(clientModal.rdv)" class="bg-gray-200 text-gray-500 py-3 rounded-xl font-bold px-4 md:hidden"><i class="fa-solid fa-trash-can"></i></button>
                         <button @click="openCancelChoice(clientModal.rdv)" class="w-full bg-red-50 text-red-700 py-3 rounded-xl font-bold hover:bg-red-100 transition">Annuler le RDV</button>
                     </div>
                 </div>
             </div>
             <div class="p-6 bg-white border-t flex justify-between items-center">
                 <div class="text-[10px] text-gray-400 font-bold hidden md:block">
-                    <div v-if="clientModal.rdv.created">Créé le {{ formatDateFr(clientModal.rdv.created) }}</div>
+                    <div v-if="clientModal.rdv.created">Créé le {{ new Date(clientModal.rdv.created).toLocaleDateString('fr-FR') }} à {{ new Date(clientModal.rdv.created).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) }}</div>
                     <div v-if="clientModal.rdv.createdBy">Par {{ clientModal.rdv.createdBy }}</div>
                 </div>
                 <button @click="updateRdv(clientModal.rdv)" class="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 shadow-xl transition transform active:scale-95">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE GESTE COMMERCIAL -->
+    <div v-if="discountModal.open" class="fixed inset-0 bg-slate-900/80 z-[230] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm pop-in border border-slate-200 relative">
+             <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg">
+                <i class="fa-solid fa-gift"></i>
+            </div>
+            <h3 class="font-bold text-2xl mb-6 text-slate-800 text-center">Geste Commercial</h3>
+            
+            <div class="space-y-4">
+                <div>
+                     <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Montant (€)</label>
+                     <input type="number" v-model.number="discountModal.amount" class="w-full p-4 border-2 border-red-100 rounded-xl font-black text-red-600 text-center text-2xl outline-none focus:border-red-400" placeholder="0">
+                </div>
+                <div>
+                     <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Motif</label>
+                     <div class="grid grid-cols-1 gap-2 mb-2">
+                         <button v-for="r in ['Véhicule KO', 'Client pensait voir l\'acheteur', 'Autre']" 
+                                 @click="discountModal.reason = r"
+                                 :class="discountModal.reason === r ? 'bg-red-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                 class="py-2 px-3 rounded-lg text-xs font-bold transition">
+                             {{ r }}
+                         </button>
+                     </div>
+                     <input v-if="discountModal.reason === 'Autre'" v-model="discountModal.customReason" placeholder="Précisez..." class="w-full p-3 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-red-400">
+                </div>
+                <!-- Message d'erreur intégré -->
+                <p v-if="discountModal.error" class="text-red-500 text-xs font-bold text-center animate-shake">{{ discountModal.error }}</p>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                 <button @click="discountModal.open=false" class="flex-1 bg-gray-100 text-gray-500 py-3 rounded-xl font-bold hover:bg-gray-200">Annuler</button>
+                 <button @click="saveDiscount" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold hover:bg-red-600 shadow-lg transform active:scale-95">Valider</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOUVELLE MODALE ALERTE RAPPELS CONNEXION (LOGIQUE CORRIGÉE) -->
+    <div v-if="reminderAlertModal.open" class="fixed inset-0 bg-slate-900/90 z-[300] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center pop-in border-4 border-red-100">
+             <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg animate-pulse">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <h3 class="font-bold text-2xl mb-2 text-slate-800">Rappels en attente</h3>
+            <p class="text-slate-500 font-medium mb-6">
+                Vous avez <strong class="text-red-500" v-if="rappelsVeilleCount>0">{{ rappelsVeilleCount }} pour Demain</strong>
+                <span v-if="rappelsVeilleCount>0 && rappelsJourCount>0"> et </span>
+                <strong class="text-red-500" v-if="rappelsJourCount>0">{{ rappelsJourCount }} pour Aujourd'hui</strong>.
+            </p>
+            
+            <div class="space-y-3">
+                <button @click="reminderAlertModal.open=false; changeView('rappels')" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-700 transition transform active:scale-95">
+                    Voir les rappels
+                </button>
+                <button @click="reminderAlertModal.open=false" class="w-full bg-white text-slate-400 border-2 border-slate-100 py-3 rounded-xl font-bold hover:bg-slate-50 hover:text-slate-600 transition">
+                   Ignorer
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODALE STATS DETAILLÉES (REFONTE COMPLETE) -->
+    <div v-if="statsModal.open" class="fixed inset-0 bg-slate-900/80 z-[240] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col pop-in">
+             <div class="bg-slate-100 p-6 flex justify-between items-center border-b">
+                 <h3 class="font-bold text-xl text-slate-800">📊 Statistiques Détaillées</h3>
+                 <button @click="statsModal.open=false" class="w-8 h-8 rounded-full bg-white hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition">✕</button>
+             </div>
+             
+             <!-- FILTRES STATS -->
+             <div class="p-6 bg-white border-b border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Filtrer par Agence</label>
+                    <select v-model="statsFilterAgency" class="w-full p-2 border border-slate-200 rounded-xl font-bold text-slate-700">
+                        <option value="">Toutes les agences</option>
+                        <option v-for="ag in agences" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
+                    </select>
+                 </div>
+                 <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Filtrer par Commercial</label>
+                    <select v-model="statsFilterUser" class="w-full p-2 border border-slate-200 rounded-xl font-bold text-slate-700">
+                        <option value="">Tous les commerciaux</option>
+                        <option v-for="u in allProspectors" :key="u" :value="u">{{ u }}</option>
+                    </select>
+                 </div>
+             </div>
+
+             <div class="flex-1 overflow-y-auto p-6 bg-slate-50">
+                 
+                 <!-- CHIFFRES CLES FILTRÉS -->
+                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-center">
+                         <p class="text-xs font-bold text-slate-400 uppercase">Total Placé</p>
+                         <p class="text-3xl font-black text-slate-800">{{ detailedStats.total }}</p>
+                     </div>
+                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-center">
+                         <p class="text-xs font-bold text-green-400 uppercase">Honorés</p>
+                         <p class="text-3xl font-black text-green-600">{{ detailedStats.honored }}</p>
+                     </div>
+                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-center">
+                         <p class="text-xs font-bold text-red-400 uppercase">Pas Venu</p>
+                         <p class="text-3xl font-black text-red-600">{{ detailedStats.noshow }}</p>
+                     </div>
+                     <div class="bg-blue-600 text-white p-4 rounded-2xl shadow-lg shadow-blue-200 text-center flex flex-col justify-center">
+                         <p class="text-xs font-bold opacity-80 uppercase">Taux Transfo.</p>
+                         <p class="text-3xl font-black">{{ detailedStats.rate }}%</p>
+                     </div>
+                 </div>
+
+                 <p class="text-center text-xs text-gray-400 font-bold uppercase tracking-widest">Données pour le mois en cours</p>
+
+             </div>
+        </div>
+    </div>
+    
+    <!-- MODALE EDITION EQUIPE -->
+    <div v-if="teamEditModal.open" class="fixed inset-0 bg-slate-900/80 z-[250] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm pop-in">
+            <h3 class="font-bold text-lg mb-4">Modifier Membre</h3>
+            <div class="space-y-3">
+                <input v-model="teamEditModal.name" placeholder="Nom" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500">
+                <input v-model="teamEditModal.email" placeholder="Email / Identifiant" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500">
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button @click="teamEditModal.open=false" class="flex-1 bg-gray-100 text-gray-500 py-2 rounded-xl font-bold">Annuler</button>
+                <button @click="saveTeamMemberEdit" class="flex-1 bg-blue-600 text-white py-2 rounded-xl font-bold">Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODALE CONFIRMATION UNIVERSELLE (Remplace confirm()) -->
+    <div v-if="customConfirmModal.open" class="fixed inset-0 bg-slate-900/80 z-[300] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center pop-in border border-slate-200">
+             <div class="w-16 h-16 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h3 class="font-bold text-xl mb-2 text-slate-800">{{ customConfirmModal.title }}</h3>
+            <p class="text-slate-500 mb-6">{{ customConfirmModal.message }}</p>
+            <div class="grid grid-cols-2 gap-4">
+                <button @click="customConfirmModal.open=false" class="bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition text-sm">Non</button>
+                <button @click="customConfirmModal.onConfirm" class="bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition shadow-lg text-sm">Oui</button>
             </div>
         </div>
     </div>
@@ -1088,7 +1294,7 @@
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
                         <table class="w-full text-left">
                             <thead class="bg-slate-100 text-slate-500 text-xs uppercase font-bold"><tr><th class="p-4">Nom</th><th class="p-4">Identifiant</th><th class="p-4 hidden md:table-cell">Statut</th><th class="p-4 text-right">Actions</th></tr></thead>
-                            <tbody class="divide-y"><tr v-for="member in teamList" :key="member.id" class="hover:bg-slate-50 transition"><td class="p-4 font-bold">{{ member.name }}</td><td class="p-4 text-blue-600 font-medium text-xs md:text-sm">{{ member.email }}</td><td class="p-4 hidden md:table-cell"><span v-if="member.blocked" class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Bloqué</span><span v-else class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Actif</span></td><td class="p-4 text-right space-x-2"><button @click="toggleBlockTeamMember(member)" :class="member.blocked ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'" class="px-3 py-1.5 rounded-lg font-bold text-xs transition">{{ member.blocked ? 'Débloquer' : 'Bloquer' }}</button><button @click="deleteTeamMember(member)" class="bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg font-bold text-xs transition"><i class="fa-solid fa-trash"></i></button></td></tr></tbody>
+                            <tbody class="divide-y"><tr v-for="member in teamList" :key="member.id" class="hover:bg-slate-50 transition"><td class="p-4 font-bold flex items-center gap-2">{{ member.name }} <button @click="openTeamEdit(member)" class="text-slate-300 hover:text-blue-500 transition"><i class="fa-solid fa-pencil text-xs"></i></button></td><td class="p-4 text-blue-600 font-medium text-xs md:text-sm">{{ member.email }}</td><td class="p-4 hidden md:table-cell"><span v-if="member.blocked" class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Bloqué</span><span v-else class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Actif</span></td><td class="p-4 text-right space-x-2"><button @click="toggleBlockTeamMember(member)" :class="member.blocked ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'" class="px-3 py-1.5 rounded-lg font-bold text-xs transition">{{ member.blocked ? 'Débloquer' : 'Bloquer' }}</button><button @click="deleteTeamMember(member)" class="bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg font-bold text-xs transition"><i class="fa-solid fa-trash"></i></button></td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -1149,6 +1355,10 @@
                 </div>
 
             </div>
+             <!-- BOUTON FERMER LES RÉGLAGES (DEMANDE) -->
+            <div class="p-4 bg-white border-t flex justify-center">
+                <button @click="settingsModal.open=false" class="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 transition shadow-lg">Fermer</button>
+            </div>
         </div>
     </div>
     <div v-if="bulkModal.open" class="fixed inset-0 bg-slate-900/60 z-[250] flex items-center justify-center p-4 backdrop-blur-sm">
@@ -1175,6 +1385,67 @@
     <div v-if="cancelModal.open" class="fixed inset-0 bg-slate-900/60 z-[160] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center"><h3 class="font-bold text-lg mb-4">Qui a annulé ?</h3><div class="space-y-3"><a :href="generateLink(cancelModal.rdv, 'cancel_clt')" target="_blank" @click="confirmCancel(cancelModal.rdv, 'client')" class="block w-full bg-slate-100 hover:bg-slate-200 py-3 rounded-xl font-bold text-slate-700 transition">Le Client</a><a :href="generateLink(cancelModal.rdv, 'cancel_ag')" target="_blank" @click="confirmCancel(cancelModal.rdv, 'agence')" class="block w-full bg-slate-100 hover:bg-slate-200 py-3 rounded-xl font-bold text-slate-700 transition">L'Agence</a><button @click="cancelModal.open=false" class="block w-full mt-4 text-gray-400 hover:text-gray-600 text-sm font-bold">Retour</button></div></div></div>
     <div v-if="pausedAgencyModal.open" class="fixed inset-0 bg-slate-900/60 z-[200] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm text-center animate-shake border-4 border-red-100"><div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-ban"></i></div><h3 class="font-bold text-xl mb-2 text-slate-800">Agence Indisponible</h3><p class="text-slate-600 mb-6 font-medium">{{ getPauseMessage(pausedAgencyModal.agency) }}</p><button @click="pausedAgencyModal.open=false" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition">Compris</button></div></div>
     <div v-if="rescheduleModal.open" class="fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] fade-in"><div class="bg-slate-50 p-4 flex justify-between items-center border-b"><h3 class="font-bold text-lg text-slate-800">📅 Reporter Rendez-Vous</h3><button @click="rescheduleModal.open=false" class="w-8 h-8 rounded-full hover:bg-slate-200">✕</button></div><div v-if="rescheduleModal.step===1" class="p-6 overflow-y-auto space-y-4"><p class="text-sm font-bold text-blue-600 text-center mb-4">RDV Actuel: {{ formatDateFr(rescheduleModal.rdv.date) }} à {{ rescheduleModal.rdv.heure }}</p><div class="mb-4"><div class="flex items-center justify-between mb-2"><h5 class="text-xs font-black uppercase text-slate-500 tracking-wider"><i class="fa-solid fa-calendar-alt text-blue-500"></i> Choisir le Nouveau Jour :</h5><input type="date" v-model="rescheduleModal.date" @change="rescheduleModal.heure=null" class="p-1 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm cursor-pointer hover:bg-blue-50"></div><div class="overflow-x-auto pb-2 hide-scrollbar snap-x flex space-x-2"><button v-for="d in dateOptions" :key="d.val" @click="rescheduleModal.date=d.val; rescheduleModal.heure=null;" :class="[rescheduleModal.date===d.val ? 'bg-blue-600 text-white shadow-lg transform scale-[1.05] date-card-selected' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-400', d.isToday ? 'border-2 border-green-500 shadow-md' : '']" class="flex-shrink-0 w-16 h-20 rounded-lg flex flex-col items-center justify-center text-sm transition-all duration-300 snap-center date-card p-1"><span :class="rescheduleModal.date===d.val ? 'text-blue-200' : 'text-slate-400'" class="text-[9px] font-bold uppercase mb-0 transition-colors">{{ d.dayName }}</span><span class="text-2xl font-black leading-none">{{ d.dayNum }}</span><span class="text-[9px] font-medium opacity-80 mt-1">{{ d.month }}</span></button></div></div><div v-if="rescheduleModal.date" class="overflow-y-auto hide-scrollbar p-2 border border-slate-100 rounded-lg bg-white shadow-inner animate-fadeIn max-h-[300px]"><h5 class="text-xs font-black uppercase text-slate-500 tracking-wider mb-2"><i class="fa-solid fa-clock text-green-500"></i> Choisir la Nouvelle Heure (09:00 à 18:00) :</h5><div class="space-y-3"><div class="grid grid-cols-4 gap-2"><button v-for="h in timeSlots" :key="h" @click="rescheduleModal.heure=h" :class="rescheduleModal.heure===h ? 'bg-green-500 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-green-50'" class="py-1.5 rounded-md text-xs font-bold transition-all duration-200">{{ h }}</button></div><div class="pt-2 flex justify-center border-t border-slate-100"><input type="time" v-model="rescheduleModal.heure" class="border-2 border-blue-100 rounded-lg p-2 font-bold text-blue-900 text-center text-sm outline-none focus:border-blue-500 bg-blue-50 w-32"></div></div></div><div v-else class="flex-1 flex items-center justify-center text-center text-gray-400 border border-dashed border-gray-200 rounded-2xl"><p class="text-sm font-medium p-8">📅 Veuillez d'abord sélectionner une date ci-dessus.</p></div><div class="flex gap-2 mt-4"><button @click="rescheduleModal.open=false" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Annuler</button><button @click="confirmRescheduleStep1" :disabled="!rescheduleModal.date || !rescheduleModal.heure || (rescheduleModal.date === rescheduleModal.rdv.date && rescheduleModal.heure === rescheduleModal.rdv.heure)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 transition transform active:scale-95 disabled:opacity-50">Confirmer Report <i class="fa-solid fa-arrow-right"></i></button></div></div><div v-if="rescheduleModal.step===2" class="p-8 text-center animate-fadeIn flex flex-col items-center justify-center h-full"><div class="w-20 h-20 bg-green-100 text-green-500 text-4xl rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-200/50 animate-bounce"><i class="fa-solid fa-check"></i></div><h4 class="text-2xl font-black text-slate-800 mb-2">Report validé !</h4><p class="text-slate-600 font-medium mb-8 max-w-xs mx-auto">Le rendez-vous a bien été déplacé au <br><strong class="text-blue-600">{{ formatDateLong(rescheduleModal.rdv.date) }} à {{ rescheduleModal.rdv.heure }}</strong>.</p><div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 w-full"><p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Voulez-vous prévenir le client ?</p><div class="grid grid-cols-1 gap-3"><button @click="sendRescheduleSMS" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition transform active:scale-95 flex items-center justify-center gap-3"><i class="fa-solid fa-comment-sms text-xl"></i> OUI, envoyer le SMS</button><button @click="rescheduleModal.open=false; clientModal.open=false; rescheduleModal.step=1" class="w-full bg-white text-slate-400 border-2 border-slate-100 py-3 rounded-xl font-bold hover:bg-slate-50 hover:text-slate-600 transition">Non, revenir au RDV</button></div></div></div></div></div>
+
+    <!-- NOUVELLE MODALE HONORÉ -->
+    <div v-if="honorModal.open" class="fixed inset-0 bg-slate-900/80 z-[220] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center pop-in border border-slate-200 relative overflow-hidden">
+            <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl animate-pulse">
+                <i class="fa-solid fa-file-signature text-3xl"></i>
+            </div>
+            <h3 class="font-bold text-2xl mb-2 text-slate-800">Honorer le RDV</h3>
+            <p class="text-slate-500 font-medium mb-8">Le client a-t-il signé un Mandat ?</p>
+            
+            <div class="space-y-3">
+                <button @click="finalizeHonor(true)" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition transform active:scale-95 flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-check-double text-xl"></i> ✅ AVEC Mandat (OK M)
+                </button>
+                <button @click="finalizeHonor(false)" class="w-full bg-white text-slate-600 border-2 border-slate-200 py-3 rounded-xl font-bold hover:bg-slate-50 hover:text-slate-800 transition">
+                   Je ne sais pas
+                </button>
+            </div>
+            <button @click="honorModal.open=false" class="mt-6 text-gray-400 text-sm hover:text-gray-600 font-bold">Annuler</button>
+        </div>
+    </div>
+
+    <!-- NOUVELLE MODALE ÉDITION CLIENT -->
+    <div v-if="editModal.open" class="fixed inset-0 bg-slate-900/80 z-[210] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col pop-in">
+            <div class="bg-slate-800 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-pencil mr-2"></i> Modifier Infos Client</h3>
+                <button @click="editModal.open=false" class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition">✕</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Nom Client</label>
+                    <input v-model="editModal.form.nom" class="w-full p-3 border-2 border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Téléphone</label>
+                    <input v-model="editModal.form.telephone" class="w-full p-3 border-2 border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Modèle Véhicule</label>
+                    <input v-model="editModal.form.modele" class="w-full p-3 border-2 border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-blue-500">
+                </div>
+                 <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Agence</label>
+                    <select v-model="editModal.form.agenceId" class="w-full p-3 border-2 border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-blue-500 bg-white">
+                        <option v-for="ag in agences" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Source</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button v-for="src in sourcesList" :key="src" @click="editModal.form.source=src" :class="editModal.form.source===src ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                            {{ src }}
+                        </button>
+                    </div>
+                </div>
+                <button @click="saveEdit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg mt-2 transform active:scale-95 transition">Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 
@@ -1239,6 +1510,20 @@
             const rescheduleModal = reactive({ open:false, step:1, date:'', heure:'', rdv:null, oldDate:null, oldHeure:null });
             const pausedAgencyModal = reactive({ open:false, agency:null });
             
+            // NOUVELLES MODALES
+            const honorModal = reactive({ open: false, rdv: null });
+            const editModal = reactive({ open: false, rdv: null, form: {} });
+            const discountModal = reactive({ open: false, amount: null, reason: '', customReason: '', error: '' });
+            const reminderAlertModal = reactive({ open: false });
+            // MODALES MODERNES (NOUVEAU)
+            const teamEditModal = reactive({ open: false, member: null, name: '', email: '' });
+            const customConfirmModal = reactive({ open: false, title: '', message: '', onConfirm: null });
+            const statsModal = reactive({ open: false });
+
+            // FILTRES STATS
+            const statsFilterAgency = ref('');
+            const statsFilterUser = ref('');
+
             const newSource = ref('');
             const newAdminName = ref('');
             const showDiscountInput = ref(false);
@@ -1361,6 +1646,14 @@
                 const today = new Date().toISOString().split('T')[0];
                 const lastLoginKey = 'lastWelcome_' + email;
                 const lastLoginDate = localStorage.getItem(lastLoginKey);
+                
+                // CHECK REMINDERS ON LOGIN
+                setTimeout(() => {
+                    if (rappelsList.value.length > 0) {
+                        reminderAlertModal.open = true;
+                    }
+                }, 1000);
+
                 if (lastLoginDate !== today) {
                     const hour = new Date().getHours();
                     const isMorning = hour < 13;
@@ -1416,7 +1709,27 @@
 
             const addTeamMember = async () => { if(!newMember.name || !newMember.email || !newMember.password) return; await db.collection('users').add({ ...newMember, role: 'prospecteur', blocked: false, created: new Date() }); newMember.name = ''; newMember.email = ''; newMember.password = ''; };
             const toggleBlockTeamMember = async (member) => { await db.collection('users').doc(member.id).update({ blocked: !member.blocked }); };
-            const deleteTeamMember = async (member) => { if(confirm("Supprimer l'accès de " + member.name + " ?")) await db.collection('users').doc(member.id).delete(); };
+            // MODERNE CONFIRM DELETE TEAM
+            const deleteTeamMember = async (member) => { 
+                openCustomConfirm("Supprimer un membre", "Voulez-vous vraiment supprimer l'accès de " + member.name + " ?", async () => {
+                    await db.collection('users').doc(member.id).delete();
+                    customConfirmModal.open = false;
+                });
+            };
+            
+            // --- NOUVEAU : Modifier le nom ET L'EMAIL d'un membre (MODE MODERNE) ---
+            const openTeamEdit = (member) => {
+                teamEditModal.member = member;
+                teamEditModal.name = member.name;
+                teamEditModal.email = member.email;
+                teamEditModal.open = true;
+            };
+
+            const saveTeamMemberEdit = async () => {
+                if (!teamEditModal.member) return;
+                await db.collection('users').doc(teamEditModal.member.id).update({ name: teamEditModal.name, email: teamEditModal.email });
+                teamEditModal.open = false;
+            };
 
             const addAdminName = async () => { if(!newAdminName.value) return; const updated = [...adminNamesList.value, newAdminName.value]; await db.collection('settings').doc('global').set({adminNames: updated}, {merge:true}); newAdminName.value = ''; };
             const removeAdminName = async (name) => { const updated = adminNamesList.value.filter(n => n !== name); await db.collection('settings').doc('global').set({adminNames: updated}, {merge:true}); };
@@ -1428,6 +1741,14 @@
                 clientModal.rdv.notes.push(noteObj);
                 await db.collection('rendezvous').doc(clientModal.rdv.id).update({ notes: clientModal.rdv.notes });
                 newNoteText.value = '';
+            };
+            // MODERNE DELETE NOTE
+            const deleteNote = async (rdv, index) => {
+                openCustomConfirm("Supprimer la note", "Voulez-vous supprimer cette note ?", async () => {
+                    rdv.notes.splice(index, 1);
+                    await db.collection('rendezvous').doc(rdv.id).update({ notes: rdv.notes });
+                    customConfirmModal.open = false;
+                });
             };
 
             const onWizardPhoneInput = (e) => { const digits = normalizePhone(e.target.value).slice(0, 10); form.telephone = formatPhone(digits); if (digits.length === 10) { const exist = rdvList.value.find(r => normalizePhone(r.telephone) === digits); if (exist) { form.nom = exist.nom; form.civilite = exist.civilite; form.modele = exist.modele; clientExists.value = true; } else { clientExists.value = false; } } else { clientExists.value = false; } };
@@ -1453,15 +1774,123 @@
             
             const openCancelChoice = (r) => { cancelModal.rdv = r; cancelModal.open = true; };
             const confirmCancel = async (r, who) => { await db.collection('rendezvous').doc(r.id).update({ statut: 'annule', motif: who, honorBilling: null }); cancelModal.open = false; clientModal.open = false; };
-            const quickCancel = async (r) => { if(!confirm('Annuler ?')) return; await db.collection('rendezvous').doc(r.id).update({ statut: 'annule', honorBilling: null }); };
+            const quickCancel = async (r) => { 
+                openCustomConfirm("Annulation Rapide", "Annuler ce rendez-vous maintenant ?", async () => {
+                     await db.collection('rendezvous').doc(r.id).update({ statut: 'annule', honorBilling: null });
+                     customConfirmModal.open = false;
+                });
+            };
             
+            // --- EDIT MODAL LOGIC ---
+            const openEdit = (r) => {
+                editModal.rdv = r;
+                editModal.form = { nom: r.nom, telephone: r.telephone, modele: r.modele, source: r.source, agenceId: r.agenceId };
+                editModal.open = true;
+            };
+            const saveEdit = async () => {
+                if(!editModal.rdv) return;
+                
+                // Si l'agence a changé, on met à jour le prix
+                if (editModal.form.agenceId !== editModal.rdv.agenceId) {
+                    const newAgency = agences.value.find(a => a.id === editModal.form.agenceId);
+                    if (newAgency) {
+                        editModal.form.prix = parseFloat(newAgency.prix) || 0;
+                    }
+                }
+
+                Object.assign(editModal.rdv, editModal.form); // Update local
+                if(clientModal.rdv && clientModal.rdv.id === editModal.rdv.id) Object.assign(clientModal.rdv, editModal.form); // Update fiche
+                await db.collection('rendezvous').doc(editModal.rdv.id).update(editModal.form);
+                editModal.open = false;
+            };
+
+            // --- HONOR MODAL LOGIC ---
+            const openHonorCheck = (r) => {
+                honorModal.rdv = r;
+                honorModal.open = true;
+            };
+            const finalizeHonor = async (withMandat) => {
+                if(!honorModal.rdv) return;
+                const r = honorModal.rdv;
+                const patch = { statut: 'honore', honorBilling: 'facture', tag: withMandat ? 'OK M' : null };
+                
+                await db.collection('rendezvous').doc(r.id).update(patch);
+                // Update local instances
+                r.statut = 'honore'; r.honorBilling = 'facture'; r.tag = patch.tag;
+                if(clientModal.rdv && clientModal.rdv.id === r.id) { Object.assign(clientModal.rdv, patch); }
+                
+                launchFireworks();
+                honorModal.open = false;
+                clientModal.open = false;
+            };
+            
+            // --- DISCOUNT MODAL LOGIC ---
+            const openDiscountModal = () => {
+                discountModal.amount = null;
+                discountModal.reason = '';
+                discountModal.customReason = '';
+                discountModal.error = ''; // Reset error
+                discountModal.open = true;
+            };
+            
+            const saveDiscount = async () => {
+                // RESET ERROR
+                discountModal.error = '';
+
+                if (!discountModal.amount && discountModal.amount !== 0) {
+                    discountModal.error = "Veuillez entrer un montant.";
+                    return;
+                }
+                let finalReason = discountModal.reason;
+                if (finalReason === 'Autre') finalReason = discountModal.customReason;
+                
+                if (!finalReason) {
+                    discountModal.error = "Veuillez choisir ou saisir un motif.";
+                    return;
+                }
+
+                if (clientModal.rdv) {
+                    clientModal.rdv.geste_commercial = discountModal.amount;
+                    clientModal.rdv.motif_geste = finalReason;
+                    await db.collection('rendezvous').doc(clientModal.rdv.id).update({
+                        geste_commercial: discountModal.amount,
+                        motif_geste: finalReason
+                    });
+                }
+                discountModal.open = false;
+            };
+            
+            // --- NOUVEAU : Supprimer le geste commercial (MODERNE) ---
+            const removeDiscount = async () => {
+                openCustomConfirm("Supprimer le geste", "Voulez-vous retirer le geste commercial ?", async () => {
+                    if (clientModal.rdv) {
+                        clientModal.rdv.geste_commercial = null;
+                        clientModal.rdv.motif_geste = null;
+                        await db.collection('rendezvous').doc(clientModal.rdv.id).update({
+                            geste_commercial: firebase.firestore.FieldValue.delete(),
+                            motif_geste: firebase.firestore.FieldValue.delete()
+                        });
+                        discountModal.open = false;
+                        customConfirmModal.open = false;
+                    }
+                });
+            }
+
+
             const updateStatus = async (r, s) => { 
-                const patch = { statut: s }; 
-                if(s==='honor_fact') { patch.statut='honore'; patch.honorBilling='facture'; launchFireworks(); } 
+                if(s==='honor_fact') { 
+                   openHonorCheck(r);
+                   return;
+                } 
+                
+                const patch = { statut: s };
                 if(s==='honor_free') { patch.statut='honore'; patch.honorBilling='gratuit'; launchFireworks(); } 
                 if(s==='noshow') { patch.statut='pas_venu'; patch.honorBilling=null; const today = new Date().toISOString().split('T')[0]; let type = 'noshow'; if(r.date === today) type = 'noshow_today'; const link = generateMsgLink(r, type); if(link) window.open(link, '_blank'); } 
-                if(s==='reset') { patch.statut='confirme'; patch.honorBilling=null; patch.motif=null; delete patch.geste_commercial; delete patch.motif_geste; } 
+                if(s==='reset') { patch.statut='confirme'; patch.honorBilling=null; patch.motif=null; delete patch.geste_commercial; delete patch.motif_geste; patch.tag = null; } 
                 await db.collection('rendezvous').doc(r.id).update(patch); 
+                // Update local to reflect immediately
+                Object.assign(r, patch);
+                if(clientModal.rdv && clientModal.rdv.id === r.id) Object.assign(clientModal.rdv, patch);
                 clientModal.open = false; 
             };
 
@@ -1474,9 +1903,18 @@
             const confirmRescheduleStep1 = async () => { 
                 if(!rescheduleModal.date || !rescheduleModal.heure) return alert('Date/Heure requises'); 
                 const newDate = rescheduleModal.date; const newHeure = rescheduleModal.heure;
-                await db.collection('rendezvous').doc(rescheduleModal.rdv.id).update({ date: newDate, heure: newHeure }); 
-                rescheduleModal.rdv.date = newDate; rescheduleModal.rdv.heure = newHeure;
-                if(clientModal.rdv && clientModal.rdv.id === rescheduleModal.rdv.id) { clientModal.rdv.date = newDate; clientModal.rdv.heure = newHeure; }
+                
+                // AJOUT NOTE SYSTEME HISTORIQUE
+                const oldInfo = `Ancien : ${formatDateFr(rescheduleModal.rdv.date)} à ${rescheduleModal.rdv.heure}`;
+                const note = { text: `📅 RDV Reporté. ${oldInfo}`, author: 'Système', date: new Date().toISOString() };
+                
+                let notes = rescheduleModal.rdv.notes || [];
+                notes.push(note);
+
+                await db.collection('rendezvous').doc(rescheduleModal.rdv.id).update({ date: newDate, heure: newHeure, notes: notes }); 
+                
+                rescheduleModal.rdv.date = newDate; rescheduleModal.rdv.heure = newHeure; rescheduleModal.rdv.notes = notes;
+                if(clientModal.rdv && clientModal.rdv.id === rescheduleModal.rdv.id) { clientModal.rdv.date = newDate; clientModal.rdv.heure = newHeure; clientModal.rdv.notes = notes; }
                 rescheduleModal.step = 2; 
             };
 
@@ -1599,6 +2037,14 @@ const showNoShow = () => { currentFilter.value = 'noshow'; view.value = 'list'; 
                 bulkModal.label = label;
                 bulkModal.open = true; 
             };
+            
+            // --- NOUVEAU : FENETRE MODERNE PERSONNALISABLE ---
+            const openCustomConfirm = (title, message, onConfirm) => {
+                customConfirmModal.title = title;
+                customConfirmModal.message = message;
+                customConfirmModal.onConfirm = onConfirm;
+                customConfirmModal.open = true;
+            };
 
             // 2. EXÉCUTION (Logique corrigée)
           const executeBulkAction = async () => {
@@ -1681,11 +2127,17 @@ const showNoShow = () => { currentFilter.value = 'noshow'; view.value = 'list'; 
             const calculateTTC = () => { const ht = parseFloat(editingAgency.value.prix_ht) || 0; const tva = parseFloat(editingAgency.value.tva_taux) || 0; editingAgency.value.prix = (ht * (1 + (tva / 100))).toFixed(2); };
             const saveEditingAgency = async () => { if(!editingAgency.value.nom) return; if(editingAgency.value.id) { await db.collection('agences').doc(editingAgency.value.id).update(editingAgency.value); } else { await db.collection('agences').add(editingAgency.value); } editingAgency.value = null; };
             const saveAgency = async (ag) => { await db.collection('agences').doc(ag.id).update(ag); };
-            const deleteAgency = async (id) => { if(confirm('Supprimer cette agence ?')) await db.collection('agences').doc(id).delete(); };
+            // MODERNE CONFIRM DELETE AGENCY
+            const deleteAgency = async (id) => { 
+                openCustomConfirm("Supprimer Agence", "Voulez-vous vraiment supprimer cette agence ?", async () => {
+                     await db.collection('agences').doc(id).delete();
+                     customConfirmModal.open = false;
+                });
+            };
             const addSource = async () => { if(!newSource.value) return; const updated = [...sourcesList.value, newSource.value]; await db.collection('settings').doc('global').set({sources:updated}, {merge:true}); newSource.value = ''; };
             const removeSource = async (src) => { const updated = sourcesList.value.filter(s => s !== src); await db.collection('settings').doc('global').set({sources:updated}, {merge:true}); };
             const changeSourceLogo = async (src) => { const url = prompt("Entrez l'URL de l'image pour " + src + " :"); if(url) { const newLogos = { ...sourceLogos.value, [src]: url }; await db.collection('settings').doc('global').set({ logos: newLogos }, { merge: true }); } };
-            const getLogo = (src) => { if(sourceLogos.value && sourceLogos.value[src]) return sourceLogos.value[src]; const s = (src||'').toLowerCase(); if(s.includes('coin')) return 'https://upload.wikimedia.org/wikipedia/commons/e/e1/Leboncoin_Logo_2016.svg'; if(s.includes('centrale')) return 'https://play-lh.googleusercontent.com/y3t-tGfqK_uJ0XQYV9xLqXoXwzX_zXwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_Xw'; if(s.includes('facebook')) return 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg'; if(s.includes('google')) return 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'; return `https://www.google.com/s2/favicons?domain=${s.replace(' ','')}.com&sz=64`; };
+            const getLogo = (src) => { if(sourceLogos.value && sourceLogos.value[src]) return sourceLogos.value[src]; const s = (src||'').toLowerCase(); if(s.includes('coin')) return 'https://upload.wikimedia.org/wikipedia/commons/e/e1/Leboncoin_Logo_2016.svg'; if(s.includes('centrale')) return 'https://play-lh.googleusercontent.com/y3t-tGfqK_uJ0XQYV9xLqXoXwzX_zXwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_Xw'; if(s.includes('facebook')) return 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg'; if(s.includes('google')) return 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'; return `https://www.google.com/s2/favicons?domain=${s.replace(' ','')}.com&sz=64`; };
             const insertTag = (tag) => { if(!editingMsgAgence.value) return; const area = document.querySelector('textarea'); if(area) { area.setRangeText(tag, area.selectionStart, area.selectionEnd, 'end'); editingMsgAgence.value.templates[editingMsgType.value] = area.value; } };
             
             const dateOptions = computed(() => { 
@@ -1788,14 +2240,17 @@ const isCreatedToday = (d) => {
     );
 };
 
-// ✅ Base : tous les RDV qui doivent être rappelés (règle isSoon + rappelFait + pas créés aujourd'hui)
+// --- LOGIQUE RAPPELS CORRIGÉE ---
+// On ne garde que les RDV dont l'heure n'est pas passée si c'est aujourd'hui
 const rappelsList = computed(() =>
     rdvList.value.filter(
         (r) =>
             ['confirme', 'a_confirmer'].includes(r.statut) &&
             !r.rappelFait &&
             isSoon(r.date) &&
-            !isCreatedToday(r.created)
+            !isCreatedToday(r.created) &&
+            // Si c'est aujourd'hui, vérifier l'heure
+            (getDayDiff(r.date) !== 0 || (r.heure && r.heure > new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})))
     )
 );
 
@@ -1844,18 +2299,74 @@ const rappelsDisplay = computed(() => {
     return list;
 });
 
+// COMPTEURS SÉPARÉS POUR LES RAPPELS
+const rappelsVeilleCount = computed(() => rappelsList.value.filter(r => isRappelTomorrow(r)).length);
+const rappelsJourCount = computed(() => rappelsList.value.filter(r => isRappelToday(r)).length);
+
 const confirmList = computed(() =>
     rdvList.value.filter((r) => r.statut === 'a_confirmer')
 );
 const rappelCount = computed(() => rappelsList.value.length);
 const confirmCount = computed(() => confirmList.value.length);
             
-            
+            // --- LOGIQUE STATS DÉTAILLÉES (FILTRABLE + CHIFFRES) ---
+            const detailedStats = computed(() => {
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+                
+                // Filtrer par mois
+                let filteredList = rdvList.value.filter(r => {
+                    if (!r.date) return false;
+                    const d = new Date(r.date);
+                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                });
+                
+                // Appliquer Filtres Utilisateur
+                if(statsFilterAgency.value) {
+                    filteredList = filteredList.filter(r => r.agenceId === statsFilterAgency.value);
+                }
+                if(statsFilterUser.value) {
+                     filteredList = filteredList.filter(r => r.createdBy === statsFilterUser.value);
+                }
+
+                // Calculs
+                const total = filteredList.length;
+                const honored = filteredList.filter(r => r.statut === 'honore').length;
+                const noshow = filteredList.filter(r => r.statut === 'pas_venu').length;
+                
+                // Calcul du taux (Honorés / (Honorés + Pas Venu))
+                const finished = honored + noshow;
+                const rate = finished > 0 ? Math.round((honored / finished) * 100) : 0;
+
+                return { total, honored, noshow, rate };
+            });
+
+            // On garde le computed property statsDetails pour compatibilité si besoin, mais on utilise detailedStats pour la modale
+            const statsDetails = computed(() => ({ agences: [], users: [] })); // Placeholder pour éviter crash si ref
+
+            const openStatsModal = () => {
+                statsFilterAgency.value = '';
+                statsFilterUser.value = '';
+                statsModal.open = true;
+            };
+
             const stats = computed(() => ({ 
                 upcoming: rdvList.value.filter(r => r.statut==='confirme').length, 
                 honored: rdvList.value.filter(r => r.statut==='honore').length, 
                 noshow: rdvList.value.filter(r => r.statut==='pas_venu').length, 
-                ca: rdvList.value.filter(r => r.honorBilling==='facture').reduce((acc,r) => { const price = r.prix || 0; const discount = r.geste_commercial || 0; return acc + (price - discount); }, 0) 
+                // CORRECTION CALCUL CA
+                ca: rdvList.value.filter(r => r.honorBilling==='facture').reduce((acc,r) => { 
+                    const price = parseFloat(r.prix) || 0; 
+                    const discount = parseFloat(r.geste_commercial) || 0; 
+                    return acc + (price - discount); 
+                }, 0),
+                // CA DU JOUR
+                ca_daily: rdvList.value.filter(r => r.honorBilling==='facture' && r.date === new Date().toISOString().split('T')[0]).reduce((acc,r) => { 
+                    const price = parseFloat(r.prix) || 0; 
+                    const discount = parseFloat(r.geste_commercial) || 0; 
+                    return acc + (price - discount); 
+                }, 0)
             }));
 
             const isLateAndNoStatus = (r) => { if(!r.date || !r.heure) return false; const start = new Date(r.date+'T'+r.heure); const end = new Date(start.getTime() + 60*60*1000); return now.value >= end && ['confirme','a_confirmer'].includes(r.statut); };
@@ -2028,10 +2539,20 @@ const getCurrentLocation = () => {
                 // NEW VARS
                 teamList, newMember, addTeamMember, toggleBlockTeamMember, deleteTeamMember, mobileMenuOpen, welcomeModal,
                 adminNamesList, newAdminName, addAdminName, removeAdminName,
-                newNoteText, addNote,showDiscountInput, allProspectors, dashboardFilters, dashboardLimit, filteredDaily,rdvTodayCount, nextRdvLabel, currentTheme
+                newNoteText, addNote,showDiscountInput, allProspectors, dashboardFilters, dashboardLimit, filteredDaily,rdvTodayCount, nextRdvLabel, currentTheme,
+                honorModal, openHonorCheck, finalizeHonor,
+                editModal, openEdit, saveEdit, deleteNote,
+                
+                discountModal, openDiscountModal, saveDiscount, removeDiscount,
+                reminderAlertModal, rappelsVeilleCount, rappelsJourCount,
+                teamEditModal, openTeamEdit, saveTeamMemberEdit,
+                customConfirmModal, openCustomConfirm,
+                
+                // NEW STATS
+                statsModal, openStatsModal, detailedStats, statsFilterAgency, statsFilterUser
             };
         }
     }).mount('#app');
 </script>
 </body> 
-</html> 
+</html>
