@@ -553,10 +553,10 @@
                             <div class="flex flex-wrap gap-2 w-full xl:w-auto">
                                 <select v-model="dashboardFilters.agencyId" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-blue-500 shadow-sm">
                                     <option value="">Toutes les agences</option>
-                                    <option v-for="ag in agences" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
+                                    <option v-for="ag in visibleAgencies" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
                                 </select>
 
-                                <select v-model="dashboardFilters.userId" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-blue-500 shadow-sm">
+                                <select v-if="user.role === 'admin'" v-model="dashboardFilters.userId" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-blue-500 shadow-sm">
                                     <option value="">Tous les utilisateurs</option>
                                     <option v-for="u in allProspectors" :key="u" :value="u">{{ u }}</option>
                                 </select>
@@ -668,7 +668,7 @@
             <div class="relative">
                 <select v-model="listFilters.agenceId" class="appearance-none bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-full pl-4 pr-8 py-2 outline-none cursor-pointer transition focus:border-blue-500">
                     <option value="">🏢 Toutes agences</option>
-                    <option v-for="ag in agences" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
+                    <option v-for="ag in visibleAgencies" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
                 </select>
                 <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none"></i>
             </div>
@@ -895,7 +895,7 @@
                     class="appearance-none bg-white border px-3 py-2 pr-8 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-red-500 shadow-sm"
                 >
                     <option value="">Toutes les agences</option>
-                    <option v-for="ag in agences" :key="ag.id" :value="ag.id">
+                    <option v-for="ag in visibleAgencies" :key="ag.id" :value="ag.id">
                         {{ ag.nom }}
                     </option>
                 </select>
@@ -903,7 +903,7 @@
             </div>
 
             <div class="relative">
-                <select
+                <select v-if="user.role === 'admin'"
                     v-model="rappelFilters.userId"
                     class="appearance-none bg-white border px-3 py-2 pr-8 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-red-500 shadow-sm"
                 >
@@ -912,7 +912,7 @@
                         {{ u }}
                     </option>
                 </select>
-                <i class="fa-solid fa-chevron-down absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none"></i>
+                <i v-if="user.role === 'admin'" class="fa-solid fa-chevron-down absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none"></i>
             </div>
 
             <button
@@ -1180,7 +1180,7 @@
                     <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Filtrer par Agence</label>
                     <select v-model="statsFilterAgency" class="w-full p-2 border border-slate-200 rounded-xl font-bold text-slate-700">
                         <option value="">Toutes les agences</option>
-                        <option v-for="ag in agences" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
+                        <option v-for="ag in visibleAgencies" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
                     </select>
                  </div>
                  <div>
@@ -1228,6 +1228,17 @@
                 <input v-model="teamEditModal.name" placeholder="Nom" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500">
                 <input v-model="teamEditModal.email" placeholder="Email / Identifiant" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500">
             </div>
+            
+            <div class="mt-4 border-t pt-4">
+                <h4 class="font-bold text-xs uppercase text-gray-500 mb-2">Agences Attribuées</h4>
+                <div class="max-h-40 overflow-y-auto space-y-2 border rounded-xl p-2 bg-slate-50">
+                    <div v-for="ag in agences" :key="ag.id" class="flex items-center gap-2">
+                        <input type="checkbox" :id="'edit-ag-'+ag.id" :value="ag.id" v-model="teamEditModal.assignedAgencies" class="custom-checkbox w-4 h-4">
+                        <label :for="'edit-ag-'+ag.id" class="text-sm font-medium text-slate-700 cursor-pointer select-none">{{ ag.nom }}</label>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex gap-3 mt-6">
                 <button @click="teamEditModal.open=false" class="flex-1 bg-gray-100 text-gray-500 py-2 rounded-xl font-bold">Annuler</button>
                 <button @click="saveTeamMemberEdit" class="flex-1 bg-blue-600 text-white py-2 rounded-xl font-bold">Sauvegarder</button>
@@ -1267,17 +1278,27 @@
                 <div v-if="settingsModal.tab==='Equipe'" class="space-y-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                         <h3 class="font-bold text-lg mb-4 text-slate-700">Ajouter un Prospecteur</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                             <input v-model="newMember.name" placeholder="Nom / Prénom" class="p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50">
                             <input v-model="newMember.email" placeholder="Identifiant / Email" class="p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50">
                             <input v-model="newMember.password" placeholder="Mot de passe" class="p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50">
                             <button @click="addTeamMember" :disabled="!newMember.name || !newMember.email || !newMember.password" class="bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition">Ajouter</button>
                         </div>
+                        
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h4 class="font-bold text-xs uppercase text-gray-500 mb-2">Agences Attribuées (pour le nouveau membre)</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-32 overflow-y-auto">
+                                <div v-for="ag in agences" :key="ag.id" class="flex items-center gap-2">
+                                    <input type="checkbox" :id="'new-ag-'+ag.id" :value="ag.id" v-model="newMember.assignedAgencies" class="custom-checkbox w-4 h-4">
+                                    <label :for="'new-ag-'+ag.id" class="text-sm font-medium text-slate-700 cursor-pointer select-none">{{ ag.nom }}</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
                         <table class="w-full text-left">
-                            <thead class="bg-slate-100 text-slate-500 text-xs uppercase font-bold"><tr><th class="p-4">Nom</th><th class="p-4">Identifiant</th><th class="p-4 hidden md:table-cell">Statut</th><th class="p-4 text-right">Actions</th></tr></thead>
-                            <tbody class="divide-y"><tr v-for="member in teamList" :key="member.id" class="hover:bg-slate-50 transition"><td class="p-4 font-bold flex items-center gap-2">{{ member.name }} <button @click="openTeamEdit(member)" class="text-slate-300 hover:text-blue-500 transition"><i class="fa-solid fa-pencil text-xs"></i></button></td><td class="p-4 text-blue-600 font-medium text-xs md:text-sm">{{ member.email }}</td><td class="p-4 hidden md:table-cell"><span v-if="member.blocked" class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Bloqué</span><span v-else class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Actif</span></td><td class="p-4 text-right space-x-2"><button @click="toggleBlockTeamMember(member)" :class="member.blocked ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'" class="px-3 py-1.5 rounded-lg font-bold text-xs transition">{{ member.blocked ? 'Débloquer' : 'Bloquer' }}</button><button @click="deleteTeamMember(member)" class="bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg font-bold text-xs transition"><i class="fa-solid fa-trash"></i></button></td></tr></tbody>
+                            <thead class="bg-slate-100 text-slate-500 text-xs uppercase font-bold"><tr><th class="p-4">Nom</th><th class="p-4">Identifiant</th><th class="p-4">Agences</th><th class="p-4 hidden md:table-cell">Statut</th><th class="p-4 text-right">Actions</th></tr></thead>
+                            <tbody class="divide-y"><tr v-for="member in teamList" :key="member.id" class="hover:bg-slate-50 transition"><td class="p-4 font-bold flex items-center gap-2">{{ member.name }} <button @click="openTeamEdit(member)" class="text-slate-300 hover:text-blue-500 transition"><i class="fa-solid fa-pencil text-xs"></i></button></td><td class="p-4 text-blue-600 font-medium text-xs md:text-sm">{{ member.email }}</td><td class="p-4 text-xs text-gray-500 font-bold">{{ (member.assignedAgencies || []).length }} accès</td><td class="p-4 hidden md:table-cell"><span v-if="member.blocked" class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Bloqué</span><span v-else class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Actif</span></td><td class="p-4 text-right space-x-2"><button @click="toggleBlockTeamMember(member)" :class="member.blocked ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'" class="px-3 py-1.5 rounded-lg font-bold text-xs transition">{{ member.blocked ? 'Débloquer' : 'Bloquer' }}</button><button @click="deleteTeamMember(member)" class="bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg font-bold text-xs transition"><i class="fa-solid fa-trash"></i></button></td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -1423,7 +1444,7 @@
                  <div>
                     <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Agence</label>
                     <select v-model="editModal.form.agenceId" class="w-full p-3 border-2 border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-blue-500 bg-white">
-                        <option v-for="ag in agences" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
+                        <option v-for="ag in visibleAgencies" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
                     </select>
                 </div>
                 <div>
@@ -1511,7 +1532,7 @@
             const discountModal = reactive({ open: false, amount: null, reason: '', customReason: '', error: '' });
             const reminderAlertModal = reactive({ open: false });
             // MODALES MODERNES (NOUVEAU)
-            const teamEditModal = reactive({ open: false, member: null, name: '', email: '' });
+            const teamEditModal = reactive({ open: false, member: null, name: '', email: '', assignedAgencies: [] });
             const customConfirmModal = reactive({ open: false, title: '', message: '', onConfirm: null });
             const statsModal = reactive({ open: false });
 
@@ -1587,7 +1608,7 @@
             const welcomeModal = reactive({ open: false, title: '', message: '', icon: '' });
 
             const teamList = ref([]);
-            const newMember = reactive({ name:'', email:'', password:'' });
+            const newMember = reactive({ name:'', email:'', password:'', assignedAgencies: [] });
 
             const msgLabels = { 'confirm': 'Confirmation', 'rappel': 'Rappel Veille', 'rappel_today': 'Rappel Jour J', 'reschedule': 'Report', 'cancel_ag': 'Annulation Agence', 'cancel_clt': 'Annulation Client', 'noshow': 'Lapin', 'noshow_today': 'Lapin (Jour J)' };
             const filters = reactive({ date: new Date().toISOString().split('T')[0] });
@@ -1616,10 +1637,23 @@
                 });
                 
                 db.collection('users').onSnapshot(snap => {
-                    teamList.value = snap.docs.map(d => ({id:d.id, ...d.data()}));
+                    teamList.value = snap.docs.map(d => ({id:d.id, assignedAgencies: [], ...d.data()}));
                 });
 
                 setInterval(() => { now.value = new Date(); }, 10000);
+            });
+
+            // NOUVEAU : Calculer les agences visibles selon l'utilisateur
+            const visibleAgencies = computed(() => {
+                // Admin voit tout
+                if (user.role === 'admin') return agences.value;
+                
+                // Prospecteur voit seulement ses agences attribuées
+                const currentUserObj = teamList.value.find(u => u.name === user.name);
+                // Si pas trouvé ou pas d'agences, tableau vide
+                const allowedIds = currentUserObj?.assignedAgencies || [];
+                
+                return agences.value.filter(a => allowedIds.includes(a.id));
             });
 
             const loadRdvData = () => {
@@ -1702,7 +1736,7 @@
                 if(rdvListener) rdvListener();
             };
 
-            const addTeamMember = async () => { if(!newMember.name || !newMember.email || !newMember.password) return; await db.collection('users').add({ ...newMember, role: 'prospecteur', blocked: false, created: new Date() }); newMember.name = ''; newMember.email = ''; newMember.password = ''; };
+            const addTeamMember = async () => { if(!newMember.name || !newMember.email || !newMember.password) return; await db.collection('users').add({ ...newMember, role: 'prospecteur', blocked: false, created: new Date() }); newMember.name = ''; newMember.email = ''; newMember.password = ''; newMember.assignedAgencies = []; };
             const toggleBlockTeamMember = async (member) => { await db.collection('users').doc(member.id).update({ blocked: !member.blocked }); };
             // MODERNE CONFIRM DELETE TEAM
             const deleteTeamMember = async (member) => { 
@@ -1717,12 +1751,18 @@
                 teamEditModal.member = member;
                 teamEditModal.name = member.name;
                 teamEditModal.email = member.email;
+                // Charge les agences déjà assignées ou tableau vide
+                teamEditModal.assignedAgencies = member.assignedAgencies || [];
                 teamEditModal.open = true;
             };
 
             const saveTeamMemberEdit = async () => {
                 if (!teamEditModal.member) return;
-                await db.collection('users').doc(teamEditModal.member.id).update({ name: teamEditModal.name, email: teamEditModal.email });
+                await db.collection('users').doc(teamEditModal.member.id).update({ 
+                    name: teamEditModal.name, 
+                    email: teamEditModal.email,
+                    assignedAgencies: teamEditModal.assignedAgencies 
+                });
                 teamEditModal.open = false;
             };
 
@@ -1945,7 +1985,13 @@
                 }
             };
 
-            const filteredAgences = computed(() => { if(!agencySearch.value) return agences.value; const s = agencySearch.value.toLowerCase(); return agences.value.filter(ag => ag.nom.toLowerCase().includes(s)); });
+            const filteredAgences = computed(() => { 
+                // MODIF : Utiliser visibleAgencies pour la recherche aussi
+                let source = visibleAgencies.value;
+                if(!agencySearch.value) return source; 
+                const s = agencySearch.value.toLowerCase(); 
+                return source.filter(ag => ag.nom.toLowerCase().includes(s)); 
+            });
             const trashList = computed(() => rdvList.value.filter(r => r.statut === 'poubelle'));
             const trashCount = computed(() => trashList.value.length);
            const restoreRdv = (r) => { 
@@ -2553,7 +2599,7 @@ const getCurrentLocation = () => {
                 customConfirmModal, openCustomConfirm, rappelFilters, rappelsDisplay,
                 
                 // NEW STATS
-                statsModal, openStatsModal, detailedStats, statsFilterAgency, statsFilterUser
+                statsModal, openStatsModal, detailedStats, statsFilterAgency, statsFilterUser, visibleAgencies
             };
         }
     }).mount('#app');
