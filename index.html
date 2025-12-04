@@ -492,12 +492,46 @@
         </div>
     </div>
 
-    <div v-if="user.role==='admin'" class="bg-green-50 border border-green-200 px-2 md:px-4 py-1 md:py-2 rounded-xl text-right ml-auto flex-shrink-0">
-        <p class="text-[9px] md:text-[10px] text-green-600 font-bold uppercase tracking-wider flex items-center justify-end gap-1"><i class="fa-regular fa-calendar"></i> <span class="hidden md:inline">{{ currentFullDateLabel }}</span></p>
-        <div class="flex flex-col items-end">
-            <p class="text-sm md:text-xl font-bold text-green-700 leading-none">{{ formatPrice(stats.ca) }} <span class="text-[10px] text-green-500 uppercase">Mois</span></p>
-            <p class="text-xs font-bold text-green-600 leading-none mt-1">{{ formatPrice(stats.ca_daily) }} <span class="text-[9px] uppercase opacity-70">Jour</span></p>
+    <!-- ADMIN CA (MODIFIÉ POUR MARGE NETTE + CA JOUR) -->
+    <div v-if="user.role==='admin'" class="bg-white border border-slate-100 px-3 md:px-4 py-1 md:py-2 rounded-xl text-right ml-auto flex-shrink-0 flex items-center gap-3 md:gap-4 shadow-sm overflow-x-auto max-w-[50vw] hide-scrollbar">
+        <div class="flex flex-col items-end border-r pr-3 border-slate-100 flex-shrink-0">
+             <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">CA Jour</p>
+             <p class="text-xs font-black text-slate-600 leading-none">{{ formatPrice(stats.ca_daily) }}</p>
         </div>
+        <div class="hidden md:flex flex-col items-end border-r pr-3 border-slate-100 flex-shrink-0">
+             <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">CA Brut</p>
+             <p class="text-xs font-bold text-slate-500 leading-none">{{ formatPrice(stats.ca) }}</p>
+        </div>
+        <div class="flex flex-col items-end border-r pr-3 border-slate-100 flex-shrink-0">
+             <p class="text-[9px] font-bold text-orange-400 uppercase tracking-wider">Commissions</p>
+             <p class="text-xs font-bold text-orange-500 leading-none">-{{ formatPrice(stats.commissions) }}</p>
+        </div>
+        <div class="flex flex-col items-end flex-shrink-0">
+            <p class="text-[9px] text-green-600 font-bold uppercase tracking-wider flex items-center justify-end gap-1"><i class="fa-solid fa-wallet"></i> <span class="hidden md:inline">Marge</span></p>
+            <div class="flex flex-col items-end">
+                <p class="text-sm md:text-xl font-black text-green-700 leading-none">{{ formatPrice(stats.net) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMMERCIAL COMMISSION (NOUVEAU) -->
+    <div v-else-if="userCommissionStats" class="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl text-right ml-auto flex-shrink-0 shadow-sm relative group cursor-help">
+        <p class="text-[9px] text-blue-600 font-bold uppercase tracking-wider flex items-center justify-end gap-1"><i class="fa-solid fa-trophy"></i> Ma Prime</p>
+        <div class="flex flex-col items-end">
+            <p class="text-sm md:text-lg font-black text-blue-700 leading-none">{{ formatPrice(userCommissionStats.totalEarnings) }}</p>
+            <p class="text-[10px] font-bold text-blue-500 leading-none mt-0.5">{{ userCommissionStats.count }} RDV Honorés</p>
+        </div>
+        
+        <!-- TOOLTIP DETAIL -->
+        <div class="absolute top-full right-0 mt-2 bg-white border border-slate-200 p-3 rounded-xl shadow-xl w-48 hidden group-hover:block z-50 text-xs text-left">
+            <div class="flex justify-between mb-1"><span class="text-slate-500">Base:</span> <span class="font-bold">{{ formatPrice(userCommissionStats.baseEarnings) }}</span></div>
+            <div class="flex justify-between mb-1"><span class="text-green-500">Bonus Palier:</span> <span class="font-bold text-green-600">+{{ formatPrice(userCommissionStats.bonusEarnings) }}</span></div>
+            <div class="flex justify-between border-t pt-1 mt-1"><span class="text-purple-500">Pourboires:</span> <span class="font-bold text-purple-600">+{{ formatPrice(userCommissionStats.tipEarnings) }}</span></div>
+        </div>
+
+        <!-- Notification Palier Atteint -->
+        <div v-if="userCommissionStats.justReachedTier" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+        <div v-if="userCommissionStats.bonusEarnings > 0" class="absolute top-0 left-0 -mt-2 -ml-2 bg-yellow-400 text-white text-[10px] font-bold px-1.5 rounded-full shadow-sm animate-bounce">🚀</div>
     </div>
 
 </header>
@@ -1161,6 +1195,28 @@
         </div>
     </div>
 
+    <!-- MODALE STATUTS MANQUANTS (NOUVELLE) -->
+    <div v-if="pendingStatusModal.open" class="fixed inset-0 bg-slate-900/90 z-[450] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center pop-in border-4 border-purple-100">
+            <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg animate-pulse">
+                <i class="fa-solid fa-clipboard-question"></i>
+            </div>
+            <h3 class="font-bold text-2xl mb-2 text-slate-800">Statuts manquants</h3>
+            <p class="text-slate-500 font-medium mb-6">
+                Vous avez <strong class="text-purple-600">{{ pendingStatusCount }} rendez-vous</strong> passés dont le statut n'est pas à jour.
+            </p>
+            
+            <div class="space-y-3">
+                <button @click="pendingStatusModal.open=false; changeView('pending_status')" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-purple-200 hover:bg-purple-700 transition transform active:scale-95">
+                    Voir les statuts
+                </button>
+                <button @click="pendingStatusModal.open=false" class="w-full bg-white text-slate-400 border-2 border-slate-100 py-3 rounded-xl font-bold hover:bg-slate-50 hover:text-slate-600 transition">
+                   Ignorer
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- NOUVELLE MODALE ALERTE RAPPELS CONNEXION (LOGIQUE CORRIGÉE) Z-INDEX FIX -->
     <div v-if="reminderAlertModal.open" class="fixed inset-0 bg-slate-900/90 z-[400] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center pop-in border-4 border-red-100">
@@ -1202,7 +1258,8 @@
                         <option v-for="ag in visibleAgencies" :key="ag.id" :value="ag.id">{{ ag.nom }}</option>
                     </select>
                  </div>
-                 <div>
+                 <!-- RESTRICTION UTILISATEUR ICI -->
+                 <div v-if="user.role === 'admin'">
                     <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Filtrer par Commercial</label>
                     <select v-model="statsFilterUser" class="w-full p-2 border border-slate-200 rounded-xl font-bold text-slate-700">
                         <option value="">Toute l'équipe</option>
@@ -1241,7 +1298,7 @@
     
     <!-- MODALE EDITION EQUIPE Z-INDEX FIX -->
     <div v-if="teamEditModal.open" class="fixed inset-0 bg-slate-900/80 z-[350] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm pop-in">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm pop-in max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-lg mb-4">Modifier Membre</h3>
             <div class="space-y-3">
                 <input v-model="teamEditModal.name" placeholder="Nom" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500">
@@ -1285,6 +1342,7 @@
     <div v-if="settingsModal.open" class="fixed inset-0 bg-slate-900/80 z-[300] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-4xl h-[90vh] md:h-[80vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col fade-in">
             <div class="flex bg-slate-100 p-2 gap-2 border-b overflow-x-auto hide-scrollbar">
+                <button @click="settingsModal.tab='Tarification'" :class="settingsModal.tab==='Tarification'?'bg-white shadow text-blue-600':'text-gray-500 hover:bg-white/50'" class="px-4 md:px-6 py-3 rounded-xl font-bold transition flex-shrink-0 whitespace-nowrap">💶 Tarification</button>
                 <button @click="settingsModal.tab='Agences'" :class="settingsModal.tab==='Agences'?'bg-white shadow text-blue-600':'text-gray-500 hover:bg-white/50'" class="px-4 md:px-6 py-3 rounded-xl font-bold transition flex-shrink-0 whitespace-nowrap">🏢 Agences</button>
                 <button @click="settingsModal.tab='Equipe'" :class="settingsModal.tab==='Equipe'?'bg-white shadow text-blue-600':'text-gray-500 hover:bg-white/50'" class="px-4 md:px-6 py-3 rounded-xl font-bold transition flex-shrink-0 whitespace-nowrap">👥 Équipe</button>
                 <button @click="settingsModal.tab='Admins'" :class="settingsModal.tab==='Admins'?'bg-white shadow text-blue-600':'text-gray-500 hover:bg-white/50'" class="px-4 md:px-6 py-3 rounded-xl font-bold transition flex-shrink-0 whitespace-nowrap">👑 Admins</button>
@@ -1295,6 +1353,49 @@
             
             <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
                 
+                <!-- ONGLET TARIFICATION (GLOBAL) -->
+                <div v-if="settingsModal.tab==='Tarification'" class="space-y-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2"><i class="fa-solid fa-sack-dollar"></i> Salaire & Bonus (Configuration Globale)</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Salaire de Base par RDV (€)</label>
+                                <input type="number" v-model.number="globalCommission.base" class="w-full p-3 border rounded-xl font-black text-blue-600 text-lg">
+                            </div>
+                        </div>
+
+                        <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                            <h4 class="font-bold text-xs uppercase text-yellow-700 mb-2">Logique Palier Récurrent</h4>
+                            <div class="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-700">
+                                <span>À partir de</span>
+                                <input type="number" v-model.number="globalCommission.threshold" class="w-16 p-2 rounded border text-center">
+                                <span>RDV, ajouter</span>
+                                <input type="number" v-model.number="globalCommission.amount" class="w-20 p-2 rounded border text-center text-green-600">
+                                <span>€ tous les</span>
+                                <input type="number" v-model.number="globalCommission.step" class="w-16 p-2 rounded border text-center">
+                                <span>RDV suivants.</span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-2 italic">Exemple: À partir de 21 RDV, tous les 10 RDV = 100€.<br>21 RDV = +100€, 31 RDV = +200€, 41 RDV = +300€...</p>
+                        </div>
+                        
+                        <button @click="saveGlobalSettings" class="mt-4 bg-slate-800 text-white px-6 py-2 rounded-xl font-bold hover:bg-slate-900 transition shadow-lg">Sauvegarder Configuration</button>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2"><i class="fa-solid fa-hand-holding-dollar"></i> Pourboires (Ce Mois-ci)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div v-for="member in teamList" :key="member.id" class="p-4 border rounded-xl bg-slate-50 flex flex-col gap-2">
+                                <div class="font-bold text-slate-800">{{ member.name }}</div>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" v-model.number="tips[member.id]" placeholder="0" class="flex-1 p-2 border rounded-lg font-bold text-green-600">
+                                    <button @click="saveTip(member.id)" class="bg-green-500 text-white w-10 h-10 rounded-lg hover:bg-green-600 transition shadow-sm"><i class="fa-solid fa-check"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div v-if="settingsModal.tab==='Equipe'" class="space-y-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                         <h3 class="font-bold text-lg mb-4 text-slate-700">Ajouter un Prospecteur</h3>
@@ -1654,16 +1755,15 @@
         appId: "1:884603881750:web:816da99e2502225779a837"
     };
     firebase.initializeApp(firebaseConfig);
-    // --- NOUVEAU CODE POUR LA PERSISTANCE INSTANTANÉE ---
-            firebase.firestore().enablePersistence()
-                .catch((err) => {
-                    if (err.code == 'failed-precondition') {
-                        console.warn("La persistance ne peut pas être activée dans cet environnement (peut-être utilisée par un autre onglet).");
-                    } else if (err.code == 'unimplemented') {
-                        console.warn("Le navigateur ne prend pas en charge la persistance (mode privé ou navigateur ancien).");
-                    }
-                });
-            // ----------------------------------------------------
+    // --- PERSISTANCE INSTANTANÉE ---
+    firebase.firestore().enablePersistence()
+        .catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.warn("Persistance non active (onglet multiple).");
+            } else if (err.code == 'unimplemented') {
+                console.warn("Persistance non supportée par le navigateur.");
+            }
+        });
     const db = firebase.firestore();
 
     const { createApp, ref, reactive, computed, onMounted } = Vue;
@@ -1671,20 +1771,18 @@
     createApp({
         setup() {
             const user = reactive({ logged:false, role:'', name:'' });
-            // LOGIN VARIABLES
             const loginEmail = ref('');
             const loginPass = ref('');
             const loginAdminSelection = ref(false); 
             
             const view = ref('dashboard');
             const currentFilter = ref('all'); 
-            const listFilters = reactive({ agenceId: '', date: '', prospecteur: '' }); // ADDED prospecteur
-            const fromDashboard = ref(false); // NEW : Track if user came from dashboard
+            const listFilters = reactive({ agenceId: '', date: '', prospecteur: '' }); 
+            const fromDashboard = ref(false);
 
-            // --- AJOUT TIMELINE ---
             const dashboardFilters = reactive({ agencyId: '', userId: '', onlyLive: false });
             const dashboardLimit = ref(15);
-            const displayLimit = ref(20); // PAGINATION
+            const displayLimit = ref(20); 
 
             const now = ref(new Date()); 
             const rdvList = ref([]);
@@ -1694,9 +1792,12 @@
             const sourcesList = ref(['Leboncoin', 'La Centrale', 'Facebook', 'Google', 'Instagram']);
             const sourceLogos = ref({}); 
             const adminNamesList = ref(['Nathanaël', 'Charlène', 'Admin']);
-            // GLOBAL SETTINGS POUR L'HEURE DE RAPPEL (DEFAULTS: J-J 8h, Veille 16h)
             const globalSettings = ref({ reminderStartTime: '08:00', reminderEveTime: '16:00' }); 
             
+            // GLOBAL COMMISSION SETTINGS
+            const globalCommission = reactive({ base: 10, threshold: 21, step: 10, amount: 100 });
+            const tips = reactive({}); // { memberId: currentMonthTipAmount }
+
             const selectedIds = ref([]);
             const bulkModal = reactive({ open: false, action: '', label: '' });
             const agencySearch = ref('');
@@ -1709,17 +1810,19 @@
             const rescheduleModal = reactive({ open:false, step:1, date:'', heure:'', rdv:null, oldDate:null, oldHeure:null });
             const pausedAgencyModal = reactive({ open:false, agency:null });
             
-            // NOUVELLES MODALES
             const honorModal = reactive({ open: false, rdv: null });
             const editModal = reactive({ open: false, rdv: null, form: {} });
             const discountModal = reactive({ open: false, amount: null, reason: '', customReason: '', error: '' });
             const reminderAlertModal = reactive({ open: false });
-            // MODALES MODERNES (NOUVEAU)
+            const pendingStatusModal = reactive({ open: false });
             const teamEditModal = reactive({ open: false, member: null, name: '', email: '', password: '', assignedAgencies: [] });
             const customConfirmModal = reactive({ open: false, title: '', message: '', onConfirm: null });
             const statsModal = reactive({ open: false });
 
-            // FILTRES STATS
+            // Flag de session pour les vérifications au démarrage
+            const checksDone = ref(false);
+            const startupTimer = ref(null);
+
             const statsFilterAgency = ref('');
             const statsFilterUser = ref('');
 
@@ -1736,56 +1839,20 @@
             const showCustomTime = ref(false);
             const mobileMenuOpen = ref(false);
             
-            // --- LOGIQUE DES THÈMES SAISONNIERS ---
             const currentTheme = computed(() => {
                 const d = new Date();
-                const month = d.getMonth() + 1; // 1-12
+                const month = d.getMonth() + 1; 
                 const day = d.getDate();
-
-                // 🎄 NOËL (Tout le mois de Décembre)
-                if (month === 12) {
-                    return { 
-                        name: 'christmas', 
-                        label: 'Joyeuses Fêtes', 
-                        icon: '🎅',
-                        classes: 'theme-christmas' 
-                    };
-                }
-
-                // 🥂 NOUVEL AN (1er au 15 Janvier)
-                if (month === 1 && day <= 15) {
-                    return { name: 'newyear', label: 'Bonne Année', icon: '🥂', classes: 'theme-newyear' };
-                }
-
-                // ❤️ SAINT VALENTIN (10 au 15 Février)
-                if (month === 2 && day >= 10 && day <= 15) {
-                    return { name: 'love', label: 'Love is in the air', icon: '❤️', classes: 'theme-love' };
-                }
-
-                // 🎃 HALLOWEEN (15 au 31 Octobre)
-                if (month === 10 && day >= 15) {
-                    return { name: 'halloween', label: 'Bouuh !', icon: '🎃', classes: 'theme-halloween' };
-                }
-
-                // ☀️ ÉTÉ (Juin, Juillet, Août)
-                if (month >= 6 && month <= 8) {
-                    return { name: 'summer', label: 'Mode Été', icon: '😎', classes: 'theme-summer' };
-                }
-
-                // 🐰 PÂQUES (Avril - Approximatif)
-                if (month === 4) {
-                    return { name: 'easter', label: 'Joyeuses Pâques', icon: '🐰', classes: 'theme-easter' };
-                }
-                // 🇫🇷 14 JUILLET (13-15 Juillet)
-                if (month === 7 && day >= 13 && day <= 15) {
-                    return { name: 'bastille', label: 'Fête Nationale', icon: '🎆', classes: 'theme-bastille' };
-                }
-
+                if (month === 12) return { name: 'christmas', label: 'Joyeuses Fêtes', icon: '🎅', classes: 'theme-christmas' };
+                if (month === 1 && day <= 15) return { name: 'newyear', label: 'Bonne Année', icon: '🥂', classes: 'theme-newyear' };
+                if (month === 2 && day >= 10 && day <= 15) return { name: 'love', label: 'Love is in the air', icon: '❤️', classes: 'theme-love' };
+                if (month === 10 && day >= 15) return { name: 'halloween', label: 'Bouuh !', icon: '🎃', classes: 'theme-halloween' };
+                if (month >= 6 && month <= 8) return { name: 'summer', label: 'Mode Été', icon: '😎', classes: 'theme-summer' };
+                if (month === 7 && day >= 13 && day <= 15) return { name: 'bastille', label: 'Fête Nationale', icon: '🎆', classes: 'theme-bastille' };
                 return { name: 'default', label: '', icon: '', classes: '' };
             });
 
             const welcomeModal = reactive({ open: false, title: '', message: '', icon: '' });
-
             const teamList = ref([]);
             const newMember = reactive({ name:'', email:'', password:'', assignedAgencies: [] });
 
@@ -1812,30 +1879,36 @@
                         if(data.sources) sourcesList.value = data.sources; 
                         if(data.logos) sourceLogos.value = data.logos;
                         if(data.adminNames) adminNamesList.value = data.adminNames;
-                        // CHARGEMENT DE L'HEURE DE RAPPEL (DEFAULT 08:00)
                         if(data.reminderStartTime) globalSettings.value.reminderStartTime = data.reminderStartTime;
-                        // CHARGEMENT DE L'HEURE DE RAPPEL VEILLE (DEFAULT 16:00)
                         if(data.reminderEveTime) globalSettings.value.reminderEveTime = data.reminderEveTime;
+                        // Load Commission Settings
+                        if(data.commission) {
+                            Object.assign(globalCommission, data.commission);
+                        }
                     }
                 });
                 
                 db.collection('users').onSnapshot(snap => {
-                    teamList.value = snap.docs.map(d => ({id:d.id, assignedAgencies: [], ...d.data()}));
+                    teamList.value = snap.docs.map(d => {
+                        const data = d.data();
+                        // Load tips for current month
+                        const currentMonthKey = `${new Date().getMonth()}-${new Date().getFullYear()}`;
+                        if (data.tips && data.tips[currentMonthKey]) {
+                            tips[d.id] = data.tips[currentMonthKey];
+                        } else {
+                            tips[d.id] = 0;
+                        }
+                        return {id:d.id, assignedAgencies: [], ...data};
+                    });
                 });
 
                 setInterval(() => { now.value = new Date(); }, 10000);
             });
 
-            // NOUVEAU : Calculer les agences visibles selon l'utilisateur
             const visibleAgencies = computed(() => {
-                // Admin voit tout
                 if (user.role === 'admin') return agences.value;
-                
-                // Prospecteur voit seulement ses agences attribuées
                 const currentUserObj = teamList.value.find(u => u.name === user.name);
-                // Si pas trouvé ou pas d'agences, tableau vide
                 const allowedIds = currentUserObj?.assignedAgencies || [];
-                
                 return agences.value.filter(a => allowedIds.includes(a.id));
             });
 
@@ -1851,45 +1924,61 @@
                         const created = data.created && data.created.toDate ? data.created.toDate() : (data.created ? new Date(data.created) : null);
                         return {id:d.id, ...data, created};
                     });
+
+                    // VÉRIFICATION DÉMARRAGE (Debounce pour attendre chargement complet)
+                    if (user.logged && !checksDone.value) {
+                        if (startupTimer.value) clearTimeout(startupTimer.value);
+                        startupTimer.value = setTimeout(() => {
+                            performStartupChecks();
+                        }, 1000); 
+                    }
                 });
+            };
+
+            const performStartupChecks = () => {
+                if (checksDone.value) return; 
+                
+                // 1. STATUTS MANQUANTS (Priorité Absolue)
+                const pendingCount = rdvList.value.filter(r => { 
+                    if(!['confirme', 'a_confirmer'].includes(r.statut)) return false; 
+                    if(!r.date || !r.heure) return false; 
+                    const end = new Date(r.date+'T'+r.heure).getTime() + 3600000; 
+                    return new Date().getTime() > end; 
+                }).length;
+
+                if (pendingCount > 0) {
+                    pendingStatusModal.open = true;
+                    checksDone.value = true;
+                    return; // Bloque les autres alertes
+                }
+
+                // 2. RAPPELS
+                const currentHour = new Date().getHours();
+                const startHour = parseInt(globalSettings.value.reminderStartTime.split(':')[0] || "8");
+                const canShowToday = currentHour >= startHour;
+                const eveStartHour = parseInt(globalSettings.value.reminderEveTime.split(':')[0] || "16");
+                const canShowVeille = currentHour >= eveStartHour;
+
+                const hasVeille = rappelsVeilleCount.value > 0;
+                const hasJour = rappelsJourCount.value > 0;
+
+                if ((hasVeille && canShowVeille) || (hasJour && canShowToday)) {
+                    reminderAlertModal.open = true;
+                }
+                
+                checksDone.value = true;
             };
 
             const checkAndShowWelcome = (email, name) => {
                 const today = new Date().toISOString().split('T')[0];
                 const lastLoginKey = 'lastWelcome_' + email;
                 const lastLoginDate = localStorage.getItem(lastLoginKey);
-                
-                // CHECK REMINDERS ON LOGIN WITH TIME CONSTRAINT
-                setTimeout(() => {
-                    const currentHour = new Date().getHours();
-                    
-                    // Logic pour aujourd'hui (J-J)
-                    const startHour = parseInt(globalSettings.value.reminderStartTime.split(':')[0] || "8");
-                    const canShowToday = currentHour >= startHour;
-
-                    // Logic pour demain (Veille)
-                    const eveStartHour = parseInt(globalSettings.value.reminderEveTime.split(':')[0] || "16");
-                    const canShowVeille = currentHour >= eveStartHour;
-
-                    // On montre l'alerte SI :
-                    // 1. Rappels pour DEMAIN (SI l'heure de veille est dépassée)
-                    // 2. OU Rappels pour AUJOURD'HUI (SI l'heure de jour est dépassée)
-                    const showVeille = rappelsVeilleCount.value > 0 && canShowVeille;
-                    const showJour = rappelsJourCount.value > 0 && canShowToday;
-
-                    if (showVeille || showJour) {
-                        reminderAlertModal.open = true;
-                    }
-                }, 1000);
-
                 if (lastLoginDate !== today) {
                     const hour = new Date().getHours();
                     const isMorning = hour < 13;
-                    if (isMorning) {
-                        welcomeModal.icon = '☀️'; welcomeModal.title = `Bonjour ${name} !`; welcomeModal.message = `J'espère que vous allez bien ! Passez une excellente matinée et bon courage pour vos appels ! 💪`;
-                    } else {
-                        welcomeModal.icon = '👋'; welcomeModal.title = `Re-bonjour ${name} !`; welcomeModal.message = `J'espère que votre matinée s'est bien passée. Excellente après-midi et bonne fin de journée ! 🚀`;
-                    }
+                    welcomeModal.title = isMorning ? `Bonjour ${name} !` : `Re-bonjour ${name} !`;
+                    welcomeModal.message = isMorning ? "J'espère que vous allez bien ! Passez une excellente matinée ! 💪" : "J'espère que votre matinée s'est bien passée. Bonne fin de journée ! 🚀";
+                    welcomeModal.icon = isMorning ? '☀️' : '👋';
                     welcomeModal.open = true;
                     launchFireworks();
                     localStorage.setItem(lastLoginKey, today);
@@ -1899,9 +1988,26 @@
             const saveGlobalSettings = async () => {
                 await db.collection('settings').doc('global').set({
                     reminderStartTime: globalSettings.value.reminderStartTime,
-                    reminderEveTime: globalSettings.value.reminderEveTime
+                    reminderEveTime: globalSettings.value.reminderEveTime,
+                    commission: globalCommission
                 }, { merge: true });
                 alert("Paramètres sauvegardés !");
+            };
+            
+            const saveTip = async (memberId) => {
+                const amount = tips[memberId];
+                if (amount === undefined || amount === null) return;
+                const currentMonthKey = `${new Date().getMonth()}-${new Date().getFullYear()}`;
+                
+                // Get existing tips map or create new
+                const memberRef = db.collection('users').doc(memberId);
+                const doc = await memberRef.get();
+                let existingTips = doc.data().tips || {};
+                
+                existingTips[currentMonthKey] = amount;
+                
+                await memberRef.update({ tips: existingTips });
+                alert("Pourboire enregistré !");
             };
 
             const currentFullDateLabel = computed(() => new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
@@ -1909,7 +2015,6 @@
             const conversionRateColor = computed(() => { const rate = conversionRate.value; if (rate < 50) return 'bg-red-50 border-red-200 text-red-700'; if (rate < 80) return 'bg-orange-50 border-orange-200 text-orange-700'; return 'bg-green-50 border-green-200 text-green-700'; });
             const conversionEmoji = computed(() => { const rate = conversionRate.value; if (rate < 50) return '😭'; if (rate < 80) return '🤨'; return '🤩'; });
 
-            // --- LOGIN LOGIC SIMPLE ---
             const login = () => { 
                 if(loginEmail.value === 'contact@cetn-solutions.fr' && loginPass.value === '130724') {
                     loginAdminSelection.value = true;
@@ -1933,19 +2038,19 @@
 
             const setUserSession = (role, name) => {
                 user.logged = true; user.role = role; user.name = name;
-                localStorage.setItem('crm_user', JSON.stringify({ role, name })); // PERSISTENCE
+                localStorage.setItem('crm_user', JSON.stringify({ role, name }));
                 loadRdvData();
             };
 
             const logout = () => { 
                 user.logged=false; loginPass.value=''; loginEmail.value=''; rdvList.value = [];
+                checksDone.value = false; 
                 localStorage.removeItem('crm_user'); 
                 if(rdvListener) rdvListener();
             };
 
             const addTeamMember = async () => { if(!newMember.name || !newMember.email || !newMember.password) return; await db.collection('users').add({ ...newMember, role: 'prospecteur', blocked: false, created: new Date() }); newMember.name = ''; newMember.email = ''; newMember.password = ''; newMember.assignedAgencies = []; };
             const toggleBlockTeamMember = async (member) => { await db.collection('users').doc(member.id).update({ blocked: !member.blocked }); };
-            // MODERNE CONFIRM DELETE TEAM
             const deleteTeamMember = async (member) => { 
                 openCustomConfirm("Supprimer un membre", "Voulez-vous vraiment supprimer l'accès de " + member.name + " ?", async () => {
                     await db.collection('users').doc(member.id).delete();
@@ -1953,31 +2058,23 @@
                 });
             };
             
-            // --- NOUVEAU : Modifier le nom ET L'EMAIL d'un membre (MODE MODERNE) ---
             const openTeamEdit = (member) => {
                 teamEditModal.member = member;
                 teamEditModal.name = member.name;
                 teamEditModal.email = member.email;
-                teamEditModal.password = ''; // Reset du champ mot de passe
-                // Charge les agences déjà assignées ou tableau vide
+                teamEditModal.password = ''; 
                 teamEditModal.assignedAgencies = member.assignedAgencies || [];
                 teamEditModal.open = true;
             };
 
             const saveTeamMemberEdit = async () => {
                 if (!teamEditModal.member) return;
-                
                 const updateData = { 
                     name: teamEditModal.name, 
-                    email: teamEditModal.email,
-                    assignedAgencies: teamEditModal.assignedAgencies 
+                    email: teamEditModal.email, 
+                    assignedAgencies: teamEditModal.assignedAgencies
                 };
-
-                // Si un mot de passe a été saisi, on l'ajoute à la mise à jour
-                if(teamEditModal.password && teamEditModal.password.trim() !== '') {
-                    updateData.password = teamEditModal.password;
-                }
-
+                if(teamEditModal.password && teamEditModal.password.trim() !== '') { updateData.password = teamEditModal.password; }
                 await db.collection('users').doc(teamEditModal.member.id).update(updateData);
                 teamEditModal.open = false;
             };
@@ -1993,7 +2090,6 @@
                 await db.collection('rendezvous').doc(clientModal.rdv.id).update({ notes: clientModal.rdv.notes });
                 newNoteText.value = '';
             };
-            // MODERNE DELETE NOTE
             const deleteNote = async (rdv, index) => {
                 openCustomConfirm("Supprimer la note", "Voulez-vous supprimer cette note ?", async () => {
                     rdv.notes.splice(index, 1);
@@ -2009,159 +2105,87 @@
             
             const getPauseMessage = (ag) => { 
                 if(!ag) return ''; 
-                
-                // Amélioration : Correction logique pour forcer l'affichage des vacances même si le format de date est bizarre ou manquant
-                // On se base uniquement sur le "motif" si les dates ne sont pas là
                 if (ag.motif_pause === 'Vacances') {
                     if (ag.date_pause_debut && ag.date_pause_fin) {
                         const start = new Date(ag.date_pause_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
                         const end = new Date(ag.date_pause_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
                         return `Cette agence est en vacances du ${start} au ${end}.`; 
-                    } else {
-                        // Fallback si dates manquantes mais motif = Vacances
-                        return "Cette agence est en vacances (Dates non précisées).";
-                    }
+                    } else { return "Cette agence est en vacances (Dates non précisées)."; }
                 }
-
                 if(ag.motif_pause === 'Complet') return "Cette agence est complète (Surchargée)."; 
                 if(ag.motif_pause === 'Travaux') return "Cette agence est fermée pour travaux."; 
-                // Fallback général
                 return `Cette agence est indisponible pour le motif suivant : ${ag.motif_pause || 'Pause momentanée'}.`; 
             };
             
             const selectSource = (src) => { if (!form.modele || !form.modele.trim()) { alert('Merci de renseigner le modèle du véhicule avant de continuer.'); return; } form.source = src; wizard.step++; };
             const finalizeRdv = async (statut) => { await db.collection('rendezvous').add({ ...form, agenceId: form.agence.id, prix: parseFloat(form.agence.prix)||0, statut, created: new Date(), createdBy: user.name, rappelFait: false }); wizard.open = false; };
             
-            const openRdvFiche = (r) => { 
-                clientModal.rdv = { ...r }; 
-                showDiscountInput.value = !!r.geste_commercial; 
-                clientModal.open = true; 
-            };
+            const openRdvFiche = (r) => { clientModal.rdv = { ...r }; showDiscountInput.value = !!r.geste_commercial; clientModal.open = true; };
             const updateRdv = async (r) => { await db.collection('rendezvous').doc(r.id).update(r); clientModal.open = false; };
-           const softDeleteRdv = (r) => {
-                selectedIds.value = [r.id];
-                clientModal.open = false; // On ferme la fiche client si elle est ouverte
-                openBulkConfirm('soft_delete', 'Envoyer ce RDV à la corbeille ?');
-            };
+            const softDeleteRdv = (r) => { selectedIds.value = [r.id]; clientModal.open = false; openBulkConfirm('soft_delete', 'Envoyer ce RDV à la corbeille ?'); };
             const deleteRdv = softDeleteRdv;
             
             const openCancelChoice = (r) => { cancelModal.rdv = r; cancelModal.open = true; };
             const confirmCancel = async (r, who) => { await db.collection('rendezvous').doc(r.id).update({ statut: 'annule', motif: who, honorBilling: null }); cancelModal.open = false; clientModal.open = false; };
-            const quickCancel = async (r) => { 
-                openCustomConfirm("Annulation Rapide", "Annuler ce rendez-vous maintenant ?", async () => {
-                     await db.collection('rendezvous').doc(r.id).update({ statut: 'annule', honorBilling: null });
-                     customConfirmModal.open = false;
-                });
-            };
+            const quickCancel = async (r) => { openCustomConfirm("Annulation Rapide", "Annuler ce rendez-vous maintenant ?", async () => { await db.collection('rendezvous').doc(r.id).update({ statut: 'annule', honorBilling: null }); customConfirmModal.open = false; }); };
             
-            // --- EDIT MODAL LOGIC ---
-            const openEdit = (r) => {
-                editModal.rdv = r;
-                editModal.form = { nom: r.nom, telephone: r.telephone, modele: r.modele, source: r.source, agenceId: r.agenceId };
-                editModal.open = true;
-            };
+            const openEdit = (r) => { editModal.rdv = r; editModal.form = { nom: r.nom, telephone: r.telephone, modele: r.modele, source: r.source, agenceId: r.agenceId }; editModal.open = true; };
             const saveEdit = async () => {
                 if(!editModal.rdv) return;
-                
-                // Si l'agence a changé, on met à jour le prix
                 if (editModal.form.agenceId !== editModal.rdv.agenceId) {
                     const newAgency = agences.value.find(a => a.id === editModal.form.agenceId);
-                    if (newAgency) {
-                        editModal.form.prix = parseFloat(newAgency.prix) || 0;
-                    }
+                    if (newAgency) { editModal.form.prix = parseFloat(newAgency.prix) || 0; }
                 }
-
-                Object.assign(editModal.rdv, editModal.form); // Update local
-                if(clientModal.rdv && clientModal.rdv.id === editModal.rdv.id) Object.assign(clientModal.rdv, editModal.form); // Update fiche
+                Object.assign(editModal.rdv, editModal.form); 
+                if(clientModal.rdv && clientModal.rdv.id === editModal.rdv.id) Object.assign(clientModal.rdv, editModal.form);
                 await db.collection('rendezvous').doc(editModal.rdv.id).update(editModal.form);
                 editModal.open = false;
             };
 
-            // --- HONOR MODAL LOGIC ---
-            const openHonorCheck = (r) => {
-                honorModal.rdv = r;
-                honorModal.open = true;
-            };
+            const openHonorCheck = (r) => { honorModal.rdv = r; honorModal.open = true; };
             const finalizeHonor = async (withMandat) => {
                 if(!honorModal.rdv) return;
                 const r = honorModal.rdv;
                 const patch = { statut: 'honore', honorBilling: 'facture', tag: withMandat ? 'OK M' : null };
-                
                 await db.collection('rendezvous').doc(r.id).update(patch);
-                // Update local instances
-                r.statut = 'honore'; r.honorBilling = 'facture'; r.tag = patch.tag;
+                Object.assign(r, patch);
                 if(clientModal.rdv && clientModal.rdv.id === r.id) { Object.assign(clientModal.rdv, patch); }
-                
                 launchFireworks();
                 honorModal.open = false;
                 clientModal.open = false;
             };
             
-            // --- DISCOUNT MODAL LOGIC ---
-            const openDiscountModal = () => {
-                discountModal.amount = null;
-                discountModal.reason = '';
-                discountModal.customReason = '';
-                discountModal.error = ''; // Reset error
-                discountModal.open = true;
-            };
-            
+            const openDiscountModal = () => { discountModal.amount = null; discountModal.reason = ''; discountModal.customReason = ''; discountModal.error = ''; discountModal.open = true; };
             const saveDiscount = async () => {
-                // RESET ERROR
                 discountModal.error = '';
-
-                if (!discountModal.amount && discountModal.amount !== 0) {
-                    discountModal.error = "Veuillez entrer un montant.";
-                    return;
-                }
+                if (!discountModal.amount && discountModal.amount !== 0) { discountModal.error = "Veuillez entrer un montant."; return; }
                 let finalReason = discountModal.reason;
                 if (finalReason === 'Autre') finalReason = discountModal.customReason;
-                
-                if (!finalReason) {
-                    discountModal.error = "Veuillez choisir ou saisir un motif.";
-                    return;
-                }
-
+                if (!finalReason) { discountModal.error = "Veuillez choisir ou saisir un motif."; return; }
                 if (clientModal.rdv) {
                     clientModal.rdv.geste_commercial = discountModal.amount;
                     clientModal.rdv.motif_geste = finalReason;
-                    await db.collection('rendezvous').doc(clientModal.rdv.id).update({
-                        geste_commercial: discountModal.amount,
-                        motif_geste: finalReason
-                    });
+                    await db.collection('rendezvous').doc(clientModal.rdv.id).update({ geste_commercial: discountModal.amount, motif_geste: finalReason });
                 }
                 discountModal.open = false;
             };
-            
-            // --- NOUVEAU : Supprimer le geste commercial (MODERNE) ---
             const removeDiscount = async () => {
                 openCustomConfirm("Supprimer le geste", "Voulez-vous retirer le geste commercial ?", async () => {
                     if (clientModal.rdv) {
-                        clientModal.rdv.geste_commercial = null;
-                        clientModal.rdv.motif_geste = null;
-                        await db.collection('rendezvous').doc(clientModal.rdv.id).update({
-                            geste_commercial: firebase.firestore.FieldValue.delete(),
-                            motif_geste: firebase.firestore.FieldValue.delete()
-                        });
-                        discountModal.open = false;
-                        customConfirmModal.open = false;
+                        clientModal.rdv.geste_commercial = null; clientModal.rdv.motif_geste = null;
+                        await db.collection('rendezvous').doc(clientModal.rdv.id).update({ geste_commercial: firebase.firestore.FieldValue.delete(), motif_geste: firebase.firestore.FieldValue.delete() });
+                        discountModal.open = false; customConfirmModal.open = false;
                     }
                 });
             }
 
-
             const updateStatus = async (r, s) => { 
-                if(s==='honor_fact') { 
-                   openHonorCheck(r);
-                   return;
-                } 
-                
+                if(s==='honor_fact') { openHonorCheck(r); return; } 
                 const patch = { statut: s };
                 if(s==='honor_free') { patch.statut='honore'; patch.honorBilling='gratuit'; launchFireworks(); } 
                 if(s==='noshow') { patch.statut='pas_venu'; patch.honorBilling=null; const today = new Date().toISOString().split('T')[0]; let type = 'noshow'; if(r.date === today) type = 'noshow_today'; const link = generateMsgLink(r, type); if(link) window.open(link, '_blank'); } 
                 if(s==='reset') { patch.statut='confirme'; patch.honorBilling=null; patch.motif=null; delete patch.geste_commercial; delete patch.motif_geste; patch.tag = null; } 
                 await db.collection('rendezvous').doc(r.id).update(patch); 
-                // Update local to reflect immediately
                 Object.assign(r, patch);
                 if(clientModal.rdv && clientModal.rdv.id === r.id) Object.assign(clientModal.rdv, patch);
                 clientModal.open = false; 
@@ -2169,62 +2193,31 @@
 
             const launchFireworks = () => { for(let i=0; i<50; i++) { const c = document.createElement('div'); c.className = 'confetti'; c.style.left = Math.random() * 100 + 'vw'; c.style.top = -10 + 'px'; c.style.backgroundColor = ['#ff0', '#f00', '#0f0', '#00f', '#f0f'][Math.floor(Math.random()*5)]; c.style.animationDuration = (Math.random() * 2 + 1) + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 3000); } };
 
-            const openRescheduleModal = (r) => { 
-                rescheduleModal.rdv = r; rescheduleModal.date = r.date; rescheduleModal.heure = r.heure; rescheduleModal.oldDate = r.date; rescheduleModal.oldHeure = r.heure; rescheduleModal.step = 1; rescheduleModal.open = true; 
-            };
-
+            const openRescheduleModal = (r) => { rescheduleModal.rdv = r; rescheduleModal.date = r.date; rescheduleModal.heure = r.heure; rescheduleModal.oldDate = r.date; rescheduleModal.oldHeure = r.heure; rescheduleModal.step = 1; rescheduleModal.open = true; };
             const confirmRescheduleStep1 = async () => { 
                 if(!rescheduleModal.date || !rescheduleModal.heure) return alert('Date/Heure requises'); 
                 const newDate = rescheduleModal.date; const newHeure = rescheduleModal.heure;
-                
-                // AJOUT NOTE SYSTEME HISTORIQUE
                 const oldInfo = `Ancien : ${formatDateFr(rescheduleModal.rdv.date)} à ${rescheduleModal.rdv.heure}`;
                 const note = { text: `📅 RDV Reporté. ${oldInfo}`, author: 'Système', date: new Date().toISOString() };
-                
-                let notes = rescheduleModal.rdv.notes || [];
-                notes.push(note);
-
+                let notes = rescheduleModal.rdv.notes || []; notes.push(note);
                 await db.collection('rendezvous').doc(rescheduleModal.rdv.id).update({ date: newDate, heure: newHeure, notes: notes }); 
-                
                 rescheduleModal.rdv.date = newDate; rescheduleModal.rdv.heure = newHeure; rescheduleModal.rdv.notes = notes;
                 if(clientModal.rdv && clientModal.rdv.id === rescheduleModal.rdv.id) { clientModal.rdv.date = newDate; clientModal.rdv.heure = newHeure; clientModal.rdv.notes = notes; }
                 rescheduleModal.step = 2; 
             };
-
-            const sendRescheduleSMS = () => { 
-                const link = generateMsgLink(rescheduleModal.rdv, 'reschedule'); if(link) window.open(link, '_blank'); 
-                rescheduleModal.open = false; clientModal.open = false; rescheduleModal.step = 1; 
-            };
-            
+            const sendRescheduleSMS = () => { const link = generateMsgLink(rescheduleModal.rdv, 'reschedule'); if(link) window.open(link, '_blank'); rescheduleModal.open = false; clientModal.open = false; rescheduleModal.step = 1; };
             const openReschedule = (r) => openRescheduleModal(r);
-            const changeView = (v) => { 
-                view.value = v; 
-                displayLimit.value = 20; // RESET LIMIT
-                if(v !== 'list') { currentFilter.value = 'all'; } 
-                selectedIds.value = []; 
-            };
+            
+            const changeView = (v) => { view.value = v; displayLimit.value = 20; if(v !== 'list') { currentFilter.value = 'all'; } selectedIds.value = []; };
             const resetListFilters = () => { search.value = ''; listFilters.agenceId = ''; listFilters.date = ''; listFilters.prospecteur = ''; currentFilter.value = 'all'; displayLimit.value=20; };
-            // MODIF : AJOUT DE fromDashboard = true
             const showUpcoming = () => { currentFilter.value = 'upcoming'; view.value = 'list'; displayLimit.value=20; fromDashboard.value = true; };
             const showLive = () => { currentFilter.value = 'live'; view.value = 'list'; displayLimit.value=20; fromDashboard.value = true; };
             const showHonored = () => { currentFilter.value = 'honored'; view.value = 'list'; displayLimit.value=20; fromDashboard.value = true; };
             const showNoShow = () => { currentFilter.value = 'noshow'; view.value = 'list'; displayLimit.value=20; fromDashboard.value = true; };
-            // NOUVEAU : showCancelled
             const showCancelled = () => { currentFilter.value = 'cancelled'; view.value = 'list'; displayLimit.value=20; fromDashboard.value = true; };
-            
-            // NOUVEAU : Fonction de retour intelligente
-            const goBackFromList = () => {
-                if (fromDashboard.value) {
-                    view.value = 'dashboard';
-                    fromDashboard.value = false;
-                    resetListFilters(); // Reset filters when going back to dashboard to keep state clean
-                } else {
-                    resetListFilters();
-                }
-            };
+            const goBackFromList = () => { if (fromDashboard.value) { view.value = 'dashboard'; fromDashboard.value = false; resetListFilters(); } else { resetListFilters(); } };
 
             const filteredAgences = computed(() => { 
-                // MODIF : Utiliser visibleAgencies pour la recherche aussi
                 let source = visibleAgencies.value;
                 if(!agencySearch.value) return source; 
                 const s = agencySearch.value.toLowerCase(); 
@@ -2232,172 +2225,44 @@
             });
             const trashList = computed(() => rdvList.value.filter(r => r.statut === 'poubelle'));
             const trashCount = computed(() => trashList.value.length);
-           const restoreRdv = (r) => { 
-                selectedIds.value = [r.id]; // On sélectionne celui qu'on a cliqué
-                openBulkConfirm('restore_trash', 'Restaurer ce rendez-vous ?'); 
-            };
-            
-            const hardDeleteRdv = (r) => { 
-                selectedIds.value = [r.id]; // On sélectionne celui qu'on a cliqué
-                openBulkConfirm('delete_trash', 'Supprimer DÉFINITIVEMENT ce rendez-vous ? (Irréversible)'); 
-            };
+            const restoreRdv = (r) => { selectedIds.value = [r.id]; openBulkConfirm('restore_trash', 'Restaurer ce rendez-vous ?'); };
+            const hardDeleteRdv = (r) => { selectedIds.value = [r.id]; openBulkConfirm('delete_trash', 'Supprimer DÉFINITIVEMENT ce rendez-vous ? (Irréversible)'); };
 
             const isEnCours = (r) => { if(!r.date || !r.heure) return false; const start = new Date(r.date+'T'+r.heure); const end = new Date(start.getTime() + 60*60*1000); return now.value >= start && now.value < end && ['confirme','a_confirmer'].includes(r.statut); };
             const activeRdvCount = computed(() => rdvList.value.filter(r => isEnCours(r)).length);
 
             const filteredList = computed(() => { 
-    let l = rdvList.value.filter(r => r.statut !== 'poubelle'); 
-                
-    // Filtres de base
-    if (listFilters.agenceId) {
-        l = l.filter(r => r.agenceId === listFilters.agenceId);
-    } 
-    if (listFilters.prospecteur) {
-        l = l.filter(r => r.createdBy === listFilters.prospecteur);
-    }
-    if (listFilters.date) {
-        l = l.filter(r => r.date === listFilters.date);
-    } 
-                
-    // Filtres Spéciaux (Boutons Dashboard)
-    if (currentFilter.value === 'upcoming') { 
-        if (!listFilters.date) { 
-            const today = new Date().toISOString().split('T')[0]; 
-            l = l.filter(r => r.statut === 'confirme' && r.date >= today); 
-        } 
-    } 
-    else if (currentFilter.value === 'live') {
-        l = l.filter(r => isEnCours(r));
-    }
-    else if (currentFilter.value === 'honored') {
-        l = l.filter(r => r.statut === 'honore');
-    }
-    else if (currentFilter.value === 'noshow') {
-        l = l.filter(r => r.statut === 'pas_venu');
-    }
-    else if (currentFilter.value === 'cancelled') { // NOUVEAU
-        l = l.filter(r => r.statut === 'annule');
-    }
-
-    // 🔍 Recherche (nom / véhicule / téléphone)
-    if (search.value) { 
-        const s = search.value.toLowerCase(); 
-        const sDigits = normalizePhone(search.value); 
-
-        l = l.filter(r => 
-            (r.nom || '').toLowerCase().includes(s) || 
-            (r.modele || '').toLowerCase().includes(s) || 
-            (sDigits && normalizePhone(r.telephone).includes(sDigits))
-        ); 
-    } 
-
-    // 🆕 NOUVEAU : si on est en mode "Tous" + aucun filtre + aucune recherche → on n'affiche rien
-    const noBaseFilter =
-        currentFilter.value === 'all' &&
-        !listFilters.agenceId &&
-        !listFilters.prospecteur &&
-        !listFilters.date &&
-        !search.value;
-
-    if (noBaseFilter) {
-        return [];
-    }
-
-    // Tri par date puis par heure
-    return l.sort((a, b) => {
-        if (a.date !== b.date) {
-            return a.date.localeCompare(b.date);
-        }
-        return (a.heure || '').localeCompare(b.heure || '');
-    });
-});
-            // PAGINATION
+                let l = rdvList.value.filter(r => r.statut !== 'poubelle'); 
+                if (listFilters.agenceId) l = l.filter(r => r.agenceId === listFilters.agenceId);
+                if (listFilters.prospecteur) l = l.filter(r => r.createdBy === listFilters.prospecteur);
+                if (listFilters.date) l = l.filter(r => r.date === listFilters.date);
+                if (currentFilter.value === 'upcoming') { if (!listFilters.date) { const today = new Date().toISOString().split('T')[0]; l = l.filter(r => r.statut === 'confirme' && r.date >= today); } } 
+                else if (currentFilter.value === 'live') l = l.filter(r => isEnCours(r));
+                else if (currentFilter.value === 'honored') l = l.filter(r => r.statut === 'honore');
+                else if (currentFilter.value === 'noshow') l = l.filter(r => r.statut === 'pas_venu');
+                else if (currentFilter.value === 'cancelled') l = l.filter(r => r.statut === 'annule');
+                if (search.value) { const s = search.value.toLowerCase(); const sDigits = normalizePhone(search.value); l = l.filter(r => (r.nom || '').toLowerCase().includes(s) || (r.modele || '').toLowerCase().includes(s) || (sDigits && normalizePhone(r.telephone).includes(sDigits))); } 
+                const noBaseFilter = currentFilter.value === 'all' && !listFilters.agenceId && !listFilters.prospecteur && !listFilters.date && !search.value;
+                if (noBaseFilter) return [];
+                return l.sort((a, b) => { if (a.date !== b.date) return a.date.localeCompare(b.date); return (a.heure || '').localeCompare(b.heure || ''); });
+            });
             const displayedList = computed(() => filteredList.value.slice(0, displayLimit.value));
 
-            // LIST OF PROSPECTORS FOR FILTER
-            const allProspectors = computed(() => {
-                // 1. Membres de l'équipe active
-                const activeTeam = teamList.value.map(u => u.name);
-                // 2. Les Admins (Nathanaël, Charlène, etc.) définis dans les réglages
-                const admins = adminNamesList.value;
-                // 3. On combine les deux listes sans doublons pour le filtre
-                return Array.from(new Set([...activeTeam, ...admins])).sort();
-            });
-
+            const allProspectors = computed(() => { const activeTeam = teamList.value.map(u => u.name); const admins = adminNamesList.value; return Array.from(new Set([...activeTeam, ...admins])).sort(); });
             const selectAll = (e) => { const list = view.value === 'trash' ? trashList.value : filteredList.value; if(e.target.checked) { selectedIds.value = list.map(r => r.id); } else { selectedIds.value = []; } };
             const toggleSelection = (id) => { if(selectedIds.value.includes(id)) { selectedIds.value = selectedIds.value.filter(i => i !== id); } else { selectedIds.value.push(id); } };
             const isAllSelected = computed(() => { const list = view.value === 'trash' ? trashList.value : filteredList.value; return list.length > 0 && selectedIds.value.length === list.length; });
 
-// CORRECTION : On utilise la confirmation directe
-          // 1. CONFIRMATION (Fenêtre système simple)
-           const openBulkConfirm = (action, label) => {
-                // On prépare la modale et on l'ouvre au lieu de l'alerte navigateur
-                bulkModal.action = action;
-                bulkModal.label = label;
-                bulkModal.open = true; 
-            };
-            
-            // --- NOUVEAU : FENETRE MODERNE PERSONNALISABLE ---
-            const openCustomConfirm = (title, message, onConfirm) => {
-                customConfirmModal.title = title;
-                customConfirmModal.message = message;
-                customConfirmModal.onConfirm = onConfirm;
-                customConfirmModal.open = true;
-            };
-
-            // 2. EXÉCUTION (Logique corrigée)
-          const executeBulkAction = async () => {
+            const openBulkConfirm = (action, label) => { bulkModal.action = action; bulkModal.label = label; bulkModal.open = true; };
+            const openCustomConfirm = (title, message, onConfirm) => { customConfirmModal.title = title; customConfirmModal.message = message; customConfirmModal.onConfirm = onConfirm; customConfirmModal.open = true; };
+            const executeBulkAction = async () => {
                 const batch = db.batch();
-
-                // CAS 1 : (NOUVEAU) Mettre à la corbeille depuis la liste principale
-                if (bulkModal.action === 'soft_delete') {
-                    selectedIds.value.forEach(id => {
-                        const ref = db.collection('rendezvous').doc(id);
-                        batch.update(ref, { statut: 'poubelle' });
-                    });
-                }
-
-                // CAS 2 : Restaurer depuis la poubelle (Ce qu'on a fait avant)
-                else if (bulkModal.action === 'restore_selection' || bulkModal.action === 'restore_trash') {
-                    selectedIds.value.forEach(id => {
-                        const ref = db.collection('rendezvous').doc(id);
-                        batch.update(ref, { statut: 'confirme' });
-                    });
-                }
-
-                // CAS 3 : Supprimer DÉFINITIVEMENT depuis la poubelle (Ce qu'on a fait avant)
-                else if (bulkModal.action === 'delete_selection' || bulkModal.action === 'delete_trash') {
-                    selectedIds.value.forEach(id => {
-                        const ref = db.collection('rendezvous').doc(id);
-                        batch.delete(ref);
-                    });
-                }
-
-                // CAS 4 : Vider toute la corbeille
-                else if (bulkModal.action === 'empty_trash') {
-                    trashList.value.forEach(r => {
-                        const ref = db.collection('rendezvous').doc(r.id);
-                        batch.delete(ref);
-                    });
-                }
-                
-                // CAS 5 : Autres actions (Sécurité pour le reste du site)
-                else {
-                    let patch = {};
-                    if (bulkModal.action === 'honor_fact') { patch = { statut: 'honore', honorBilling: 'facture' }; }
-                    else if (bulkModal.action === 'noshow') { patch = { statut: 'pas_venu', honorBilling: null }; }
-                    
-                    if(Object.keys(patch).length > 0) {
-                        selectedIds.value.forEach(id => {
-                            const ref = db.collection('rendezvous').doc(id);
-                            batch.update(ref, patch);
-                        });
-                    }
-                }
-
-                await batch.commit();
-                selectedIds.value = []; 
-                bulkModal.open = false;
+                if (bulkModal.action === 'soft_delete') { selectedIds.value.forEach(id => { const ref = db.collection('rendezvous').doc(id); batch.update(ref, { statut: 'poubelle' }); }); }
+                else if (bulkModal.action === 'restore_selection' || bulkModal.action === 'restore_trash') { selectedIds.value.forEach(id => { const ref = db.collection('rendezvous').doc(id); batch.update(ref, { statut: 'confirme' }); }); }
+                else if (bulkModal.action === 'delete_selection' || bulkModal.action === 'delete_trash') { selectedIds.value.forEach(id => { const ref = db.collection('rendezvous').doc(id); batch.delete(ref); }); }
+                else if (bulkModal.action === 'empty_trash') { trashList.value.forEach(r => { const ref = db.collection('rendezvous').doc(r.id); batch.delete(ref); }); }
+                else { let patch = {}; if (bulkModal.action === 'honor_fact') { patch = { statut: 'honore', honorBilling: 'facture' }; } else if (bulkModal.action === 'noshow') { patch = { statut: 'pas_venu', honorBilling: null }; } if(Object.keys(patch).length > 0) { selectedIds.value.forEach(id => { const ref = db.collection('rendezvous').doc(id); batch.update(ref, patch); }); } }
+                await batch.commit(); selectedIds.value = []; bulkModal.open = false;
             };
 
             const formatDateFr = (d) => d ? new Date(d).toLocaleDateString('fr-FR') : '';
@@ -2426,42 +2291,16 @@
             const calculateTTC = () => { const ht = parseFloat(editingAgency.value.prix_ht) || 0; const tva = parseFloat(editingAgency.value.tva_taux) || 0; editingAgency.value.prix = (ht * (1 + (tva / 100))).toFixed(2); };
             const saveEditingAgency = async () => { if(!editingAgency.value.nom) return; if(editingAgency.value.id) { await db.collection('agences').doc(editingAgency.value.id).update(editingAgency.value); } else { await db.collection('agences').add(editingAgency.value); } editingAgency.value = null; };
             const saveAgency = async (ag) => { await db.collection('agences').doc(ag.id).update(ag); };
-            // MODERNE CONFIRM DELETE AGENCY
-            const deleteAgency = async (id) => { 
-                openCustomConfirm("Supprimer Agence", "Voulez-vous vraiment supprimer cette agence ?", async () => {
-                     await db.collection('agences').doc(id).delete();
-                     customConfirmModal.open = false;
-                });
-            };
+            const deleteAgency = async (id) => { openCustomConfirm("Supprimer Agence", "Voulez-vous vraiment supprimer cette agence ?", async () => { await db.collection('agences').doc(id).delete(); customConfirmModal.open = false; }); };
             const addSource = async () => { if(!newSource.value) return; const updated = [...sourcesList.value, newSource.value]; await db.collection('settings').doc('global').set({sources:updated}, {merge:true}); newSource.value = ''; };
             const removeSource = async (src) => { const updated = sourcesList.value.filter(s => s !== src); await db.collection('settings').doc('global').set({sources:updated}, {merge:true}); };
             const changeSourceLogo = async (src) => { const url = prompt("Entrez l'URL de l'image pour " + src + " :"); if(url) { const newLogos = { ...sourceLogos.value, [src]: url }; await db.collection('settings').doc('global').set({ logos: newLogos }, { merge: true }); } };
             const getLogo = (src) => { if(sourceLogos.value && sourceLogos.value[src]) return sourceLogos.value[src]; const s = (src||'').toLowerCase(); if(s.includes('coin')) return 'https://upload.wikimedia.org/wikipedia/commons/e/e1/Leboncoin_Logo_2016.svg'; if(s.includes('centrale')) return 'https://play-lh.googleusercontent.com/y3t-tGfqK_uJ0XQYV9xLqXoXwzX_zXwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_XwX_Xw'; if(s.includes('facebook')) return 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg'; if(s.includes('google')) return 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg'; return `https://www.google.com/s2/favicons?domain=${s.replace(' ','')}.com&sz=64`; };
             const insertTag = (tag) => { if(!editingMsgAgence.value) return; const area = document.querySelector('textarea'); if(area) { area.setRangeText(tag, area.selectionStart, area.selectionEnd, 'end'); editingMsgAgence.value.templates[editingMsgType.value] = area.value; } };
             
-            const dateOptions = computed(() => { 
-                const arr = []; const today = new Date(); const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']; const months = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
-                for(let i=0; i<14; i++) { 
-                    const d = new Date(); d.setDate(today.getDate()+i); 
-                    const year = d.getFullYear(); const month = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const localDateString = `${year}-${month}-${day}`;
-                    arr.push({ val: localDateString, dayName: days[d.getDay()], dayNum: d.getDate(), month: months[d.getMonth()], isToday: i === 0 }); 
-                } 
-                return arr; 
-            });
-            // NOUVELLE LOGIQUE HEURES (09h00 -> 19h00)
-            const timeSlots = computed(() => {
-                const slots = [];
-                for (let hour = 9; hour <= 19; hour++) {
-                    const hStr = String(hour).padStart(2, '0');
-                    slots.push(`${hStr}:00`);
-                    if (hour !== 19) {
-                        slots.push(`${hStr}:30`);
-                    }
-                }
-                return slots;
-            });
+            const dateOptions = computed(() => { const arr = []; const today = new Date(); const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']; const months = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc']; for(let i=0; i<14; i++) { const d = new Date(); d.setDate(today.getDate()+i); const year = d.getFullYear(); const month = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const localDateString = `${year}-${month}-${day}`; arr.push({ val: localDateString, dayName: days[d.getDay()], dayNum: d.getDate(), month: months[d.getMonth()], isToday: i === 0 }); } return arr; });
+            const timeSlots = computed(() => { const slots = []; for (let hour = 9; hour <= 19; hour++) { const hStr = String(hour).padStart(2, '0'); slots.push(`${hStr}:00`); if (hour !== 19) { slots.push(`${hStr}:30`); } } return slots; });
 
-            // LARGE CHOIX DE VÉHICULES (AUTO-COMPLETE) - NETTOYÉ (PLUS DE FINITIONS)
             const commonCars = ref([
                 "Renault Clio", "Renault Megane", "Renault Captur", "Renault Austral", "Renault Arkana", "Renault Zoe", "Renault Scenic", "Renault Espace", "Renault Twingo", "Renault Kangoo",
                 "Peugeot 208", "Peugeot 2008", "Peugeot 308", "Peugeot 3008", "Peugeot 5008", "Peugeot 508", "Peugeot Rifter", "Peugeot Traveller",
@@ -2486,24 +2325,15 @@
                 "Porsche Macan", "Porsche Cayenne", "Porsche 911"
             ]);
 
-            // FONCTION COLLER NUMÉRO ET FORMATER
             const pastePhoneNumber = async () => {
                 try {
                     const text = await navigator.clipboard.readText();
                     if (text) {
-                        // Nettoyage agressif : supprime +33, 0033 et tout ce qui n'est pas chiffre
                         let cleaned = text.replace(/^\+33/, '0').replace(/^0033/, '0').replace(/\D/g, '');
-                        
-                        // Si après nettoyage on a un format type '336...' sans le +
                         if (cleaned.startsWith('33') && cleaned.length === 11) cleaned = '0' + cleaned.substring(2);
-                        
-                        // Si trop long, on coupe
                         if (cleaned.length > 10) cleaned = cleaned.substring(0, 10);
-
                         if (cleaned.length === 10) {
                             form.telephone = formatPhone(cleaned);
-                            
-                            // Vérification Client Existant INSTANTANÉE
                             const digits = normalizePhone(form.telephone);
                             const exist = rdvList.value.find(r => normalizePhone(r.telephone) === digits);
                             if (exist) {
@@ -2514,309 +2344,215 @@
                             } else {
                                 clientExists.value = false;
                             }
-                        } else {
-                            // On ne fait rien si format invalide pour ne pas bloquer l'UX avec une alerte
-                            // Ou juste un log
-                            console.log("Format collé invalide");
                         }
                     }
                 } catch (err) {
                     console.error('Erreur collage:', err);
-                    // On ne met pas d'alerte pour éviter le "navigateur propose de coller" si c'est un blocage
                 }
             };
 
-// --- NOUVELLE LOGIQUE TIMELINE (VERSION CORRIGÉE) ---
-
-            // 1. On calcule la liste complète selon tes filtres (Agence, User, En cours)
             const filteredDaily = computed(() => { 
-                // Sécurité : si les données ne sont pas encore chargées, on renvoie vide pour éviter le bug
                 if (!rdvList.value) return [];
-
                 let list = rdvList.value.filter(r => r.date === filters.date && r.statut !== 'poubelle');
-
-                // Filtre Agence
-                if (dashboardFilters.agencyId) {
-                    list = list.filter(r => r.agenceId === dashboardFilters.agencyId);
-                }
-                // Filtre Utilisateur
-                if (dashboardFilters.userId) {
-                    list = list.filter(r => r.createdBy === dashboardFilters.userId);
-                }
-                // Filtre En Cours
-                if (dashboardFilters.onlyLive) {
-                    list = list.filter(r => isEnCours(r));
-                }
-
-                // Tri par heure + Ajout du nom de l'agence
+                if (dashboardFilters.agencyId) list = list.filter(r => r.agenceId === dashboardFilters.agencyId);
+                if (dashboardFilters.userId) list = list.filter(r => r.createdBy === dashboardFilters.userId);
+                if (dashboardFilters.onlyLive) list = list.filter(r => isEnCours(r));
                 return list.sort((a,b) => a.heure.localeCompare(b.heure)).map(r => ({...r, agenceNom: agences.value.find(a=>a.id===r.agenceId)?.nom})); 
             });
-
-            // 2. On coupe la liste pour l'affichage (Pagination : 15, 30, 45...)
-            const displayedDaily = computed(() => {
-                return filteredDaily.value.slice(0, dashboardLimit.value);
-            });
-
-            // 3. FIX DU BUG : On utilise "computed" ici aussi pour forcer l'affichage immédiat
+            const displayedDaily = computed(() => filteredDaily.value.slice(0, dashboardLimit.value));
             const sortedDaily = computed(() => displayedDaily.value);
-            
-            
-            
-            // 🔢 Nombre de RDV du jour (en fonction des filtres Timeline)
-// 🔢 Nombre de RDV du jour = même liste que la Timeline
-const rdvTodayCount = computed(() => filteredDaily.value.length);
-            // Calculer le nombre de RDV en cours (selon les filtres Agence/User choisis)
+            const rdvTodayCount = computed(() => filteredDaily.value.length);
             const timelineActiveCount = computed(() => {
                 if (!rdvList.value) return 0;
                 let list = rdvList.value.filter(r => r.date === filters.date && r.statut !== 'poubelle');
-                // On applique les mêmes filtres que la liste
                 if (dashboardFilters.agencyId) list = list.filter(r => r.agenceId === dashboardFilters.agencyId);
                 if (dashboardFilters.userId) list = list.filter(r => r.createdBy === dashboardFilters.userId);
-                // On compte ceux qui sont actifs
                 return list.filter(r => isEnCours(r)).length;
             });
-            const isSoon = (dStr) => {
-    if (!dStr) return false;
-
-    // On part de "now" pour que ça se mette à jour avec le setInterval
-    const nowDate = now.value ? new Date(now.value) : new Date();
-
-    // On travaille en jours "pleins" (minuit)
-    const today = new Date(nowDate);
-    today.setHours(0, 0, 0, 0);
-
-    const d = new Date(dStr);
-    d.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.round((d - today) / 86400000);
-
-    // Jour J
-    if (diffDays === 0) return true;
-
-    // Veille (demain) à partir de 16h
-    if (diffDays === 1) {
-        const hour = nowDate.getHours();
-        return hour >= 16;
-    }
-
-    return false;
-};
-
-const isCreatedToday = (d) => {
-    if (!d) return false;
-    const date = new Date(d);
-    const today = new Date();
-    return (
-        date.getDate() === today.getDate() &&
-        date.getMonth() === today.getMonth() &&
-        date.getFullYear() === today.getFullYear()
-    );
-};
-
-// --- LOGIQUE RAPPELS CORRIGÉE ---
-// On ne garde que les RDV dont l'heure n'est pas passée si c'est aujourd'hui
-const rappelsList = computed(() =>
-    rdvList.value.filter(
-        (r) =>
-            ['confirme', 'a_confirmer'].includes(r.statut) &&
-            !r.rappelFait &&
-            isSoon(r.date) &&
-            !isCreatedToday(r.created) &&
-            // Si c'est aujourd'hui, vérifier l'heure
-            (getDayDiff(r.date) !== 0 || (r.heure && r.heure > new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})))
-    )
-);
-
-// 🔹 Filtres internes pour l’onglet Rappels
-const rappelFilters = reactive({
-    day: 'today',    // 'today' = Aujourd’hui, 'tomorrow' = Demain (Veille)
-    agenceId: '',
-    userId: ''
-});
-
-const getDayDiff = (dStr) => {
-    if (!dStr) return null;
-    const base = now.value ? new Date(now.value) : new Date();
-    base.setHours(0, 0, 0, 0);
-
-    const d = new Date(dStr);
-    d.setHours(0, 0, 0, 0);
-
-    return Math.round((d - base) / 86400000);
-};
-
-const isRappelToday = (r) => getDayDiff(r.date) === 0;
-const isRappelTomorrow = (r) => getDayDiff(r.date) === 1;
-
-// ✅ Liste vraiment affichée dans l’écran Rappels (onglets + filtres)
-const rappelsDisplay = computed(() => {
-    let list = rappelsList.value;
-
-    // Onglet : Aujourd’hui / Demain (Veille)
-    if (rappelFilters.day === 'today') {
-        list = list.filter((r) => isRappelToday(r));
-    } else if (rappelFilters.day === 'tomorrow') {
-        list = list.filter((r) => isRappelTomorrow(r));
-    }
-
-    // Filtre agence
-    if (rappelFilters.agenceId) {
-        list = list.filter((r) => r.agenceId === rappelFilters.agenceId);
-    }
-
-    // Filtre utilisateur (créé par)
-    if (rappelFilters.userId) {
-        list = list.filter((r) => r.createdBy === rappelFilters.userId);
-    }
-
-    return list;
-});
-
-// COMPTEURS SÉPARÉS POUR LES RAPPELS
-const rappelsVeilleCount = computed(() => rappelsList.value.filter(r => isRappelTomorrow(r)).length);
-const rappelsJourCount = computed(() => rappelsList.value.filter(r => isRappelToday(r)).length);
-
-const confirmList = computed(() =>
-    rdvList.value.filter((r) => r.statut === 'a_confirmer')
-);
-const rappelCount = computed(() => rappelsList.value.length);
-const confirmCount = computed(() => confirmList.value.length);
             
-            // --- LOGIQUE STATS DÉTAILLÉES (FILTRABLE + CHIFFRES) ---
+            const isSoon = (dStr) => {
+                if (!dStr) return false;
+                const nowDate = now.value ? new Date(now.value) : new Date();
+                const today = new Date(nowDate); today.setHours(0, 0, 0, 0);
+                const d = new Date(dStr); d.setHours(0, 0, 0, 0);
+                const diffDays = Math.round((d - today) / 86400000);
+                if (diffDays === 0) return true;
+                if (diffDays === 1) { const hour = nowDate.getHours(); return hour >= 16; }
+                return false;
+            };
+
+            const isCreatedToday = (d) => {
+                if (!d) return false;
+                const date = new Date(d);
+                const today = new Date();
+                return (date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear());
+            };
+
+            const getDayDiff = (dStr) => {
+                if (!dStr) return null;
+                const base = now.value ? new Date(now.value) : new Date(); base.setHours(0, 0, 0, 0);
+                const d = new Date(dStr); d.setHours(0, 0, 0, 0);
+                return Math.round((d - base) / 86400000);
+            };
+
+            const rappelsList = computed(() => rdvList.value.filter((r) => ['confirme', 'a_confirmer'].includes(r.statut) && !r.rappelFait && isSoon(r.date) && !isCreatedToday(r.created) && (getDayDiff(r.date) !== 0 || (r.heure && r.heure > new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})))));
+            const rappelFilters = reactive({ day: 'today', agenceId: '', userId: '' });
+            const isRappelToday = (r) => getDayDiff(r.date) === 0;
+            const isRappelTomorrow = (r) => getDayDiff(r.date) === 1;
+            const rappelsDisplay = computed(() => {
+                let list = rappelsList.value;
+                if (rappelFilters.day === 'today') { list = list.filter((r) => isRappelToday(r)); } else if (rappelFilters.day === 'tomorrow') { list = list.filter((r) => isRappelTomorrow(r)); }
+                if (rappelFilters.agenceId) { list = list.filter((r) => r.agenceId === rappelFilters.agenceId); }
+                if (rappelFilters.userId) { list = list.filter((r) => r.createdBy === rappelFilters.userId); }
+                return list;
+            });
+            const rappelsVeilleCount = computed(() => rappelsList.value.filter(r => isRappelTomorrow(r)).length);
+            const rappelsJourCount = computed(() => rappelsList.value.filter(r => isRappelToday(r)).length);
+            const confirmList = computed(() => rdvList.value.filter((r) => r.statut === 'a_confirmer'));
+            const rappelCount = computed(() => rappelsList.value.length);
+            const confirmCount = computed(() => confirmList.value.length);
+            
             const detailedStats = computed(() => {
-                const now = new Date();
-                const currentMonth = now.getMonth();
-                const currentYear = now.getFullYear();
+                const now = new Date(); const currentMonth = now.getMonth(); const currentYear = now.getFullYear();
                 
-                // Filtrer par mois
-                let filteredList = rdvList.value.filter(r => {
-                    if (!r.date) return false;
-                    // --- EXCLUSION DES POUBELLES (FIX DEMANDÉ) ---
-                    if (r.statut === 'poubelle') return false; 
-                    
+                let targetUser = statsFilterUser.value;
+                if (user.role !== 'admin') {
+                    targetUser = user.name;
+                }
+
+                let filteredList = rdvList.value.filter(r => { if (!r.date) return false; if (r.statut === 'poubelle') return false; const d = new Date(r.date); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; });
+                if(statsFilterAgency.value) { filteredList = filteredList.filter(r => r.agenceId === statsFilterAgency.value); }
+                if(targetUser) { filteredList = filteredList.filter(r => r.createdBy === targetUser); }
+                
+                const total = filteredList.length; const honored = filteredList.filter(r => r.statut === 'honore').length; const noshow = filteredList.filter(r => r.statut === 'pas_venu').length; const finished = honored + noshow; const rate = finished > 0 ? Math.round((honored / finished) * 100) : 0;
+                return { total, honored, noshow, rate };
+            });
+            const openStatsModal = () => { statsFilterAgency.value = ''; statsFilterUser.value = ''; statsModal.open = true; };
+            
+            // Calcul des commissions pour le commercial connecté (AVEC LOGIQUE RECURRENTE)
+            const userCommissionStats = computed(() => {
+                if (user.role === 'admin') return null; 
+                
+                const basePrice = parseFloat(globalCommission.base) || 0;
+                const bonusThreshold = parseInt(globalCommission.threshold) || 21;
+                const bonusStep = parseInt(globalCommission.step) || 10;
+                const bonusAmount = parseFloat(globalCommission.amount) || 100;
+
+                const now = new Date(); const currentMonth = now.getMonth(); const currentYear = now.getFullYear();
+                
+                const honoredRdvs = rdvList.value.filter(r => {
+                    if (r.statut !== 'honore' || r.createdBy !== user.name || !r.date) return false;
                     const d = new Date(r.date);
                     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
                 });
-                
-                // Appliquer Filtres Utilisateur
-                if(statsFilterAgency.value) {
-                    filteredList = filteredList.filter(r => r.agenceId === statsFilterAgency.value);
-                }
-                if(statsFilterUser.value) {
-                     filteredList = filteredList.filter(r => r.createdBy === statsFilterUser.value);
+
+                const count = honoredRdvs.length;
+                let baseEarnings = count * basePrice;
+                let bonusEarnings = 0;
+
+                // Logique récurrente: 
+                // Si threshold=21, step=10, amount=100.
+                // 21 -> 100
+                // 31 -> 200
+                if (count >= bonusThreshold) {
+                    // (21-21)/10 + 1 = 1 * 100 = 100
+                    // (31-21)/10 + 1 = 2 * 100 = 200
+                    const multiplier = Math.floor((count - bonusThreshold) / bonusStep) + 1;
+                    bonusEarnings = multiplier * bonusAmount;
                 }
 
-                // Calculs
-                const total = filteredList.length;
-                const honored = filteredList.filter(r => r.statut === 'honore').length;
-                const noshow = filteredList.filter(r => r.statut === 'pas_venu').length;
-                
-                // Calcul du taux (Honorés / (Honorés + Pas Venu))
-                const finished = honored + noshow;
-                const rate = finished > 0 ? Math.round((honored / finished) * 100) : 0;
+                // Add Tips
+                const currentMonthKey = `${currentMonth}-${currentYear}`;
+                // Get tip for this user from loaded tips object (reactive)
+                const myUserEntry = teamList.value.find(u => u.name === user.name);
+                let tipEarnings = 0;
+                if(myUserEntry && tips[myUserEntry.id]) {
+                    tipEarnings = tips[myUserEntry.id];
+                }
 
-                return { total, honored, noshow, rate };
+                const totalEarnings = baseEarnings + bonusEarnings + tipEarnings;
+
+                return { 
+                    count, 
+                    baseEarnings, 
+                    bonusEarnings, 
+                    tipEarnings, 
+                    totalEarnings,
+                    justReachedTier: (count >= bonusThreshold) && ((count - bonusThreshold) % bonusStep === 0) // Visual effect trigger
+                };
             });
 
-            // On garde le computed property statsDetails pour compatibilité si besoin, mais on utilise detailedStats pour la modale
-            const statsDetails = computed(() => ({ agences: [], users: [] })); // Placeholder pour éviter crash si ref
+            // STATS ADMIN AVEC CALCUL MARGE
+            const stats = computed(() => {
+                const nowStr = new Date().toISOString().split('T')[0];
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
 
-            const openStatsModal = () => {
-                statsFilterAgency.value = '';
-                statsFilterUser.value = '';
-                statsModal.open = true;
-            };
+                const upcoming = rdvList.value.filter(r => r.statut==='confirme').length;
+                const honored = rdvList.value.filter(r => r.statut==='honore').length;
+                const noshow = rdvList.value.filter(r => r.statut==='pas_venu').length;
+                const cancelled = rdvList.value.filter(r => r.statut==='annule').length;
 
-            const stats = computed(() => ({ 
-                upcoming: rdvList.value.filter(r => r.statut==='confirme').length, 
-                honored: rdvList.value.filter(r => r.statut==='honore').length, 
-                noshow: rdvList.value.filter(r => r.statut==='pas_venu').length, 
-                cancelled: rdvList.value.filter(r => r.statut==='annule').length, // AJOUT ANNULÉS
-                // CORRECTION CALCUL CA
-                ca: rdvList.value.filter(r => r.honorBilling==='facture').reduce((acc,r) => { 
+                // CA BRUT
+                const ca = rdvList.value.filter(r => r.honorBilling==='facture').reduce((acc,r) => { 
                     const price = parseFloat(r.prix) || 0; 
                     const discount = parseFloat(r.geste_commercial) || 0; 
                     return acc + (price - discount); 
-                }, 0),
-                // CA DU JOUR
-                ca_daily: rdvList.value.filter(r => r.honorBilling==='facture' && r.date === new Date().toISOString().split('T')[0]).reduce((acc,r) => { 
+                }, 0);
+
+                // CA Journalier
+                const ca_daily = rdvList.value.filter(r => r.honorBilling==='facture' && r.date === nowStr).reduce((acc,r) => { 
                     const price = parseFloat(r.prix) || 0; 
                     const discount = parseFloat(r.geste_commercial) || 0; 
                     return acc + (price - discount); 
-                }, 0)
-            }));
+                }, 0);
+
+                // Commissions Totales
+                const commissionMap = {}; 
+                rdvList.value.forEach(r => {
+                    if (r.statut === 'honore' && r.date) {
+                        const d = new Date(r.date);
+                        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                            const uName = r.createdBy || 'Système';
+                            if (!commissionMap[uName]) commissionMap[uName] = 0;
+                            commissionMap[uName]++;
+                        }
+                    }
+                });
+
+                let totalCommissions = 0;
+                
+                const basePrice = parseFloat(globalCommission.base) || 0;
+                const bonusThreshold = parseInt(globalCommission.threshold) || 21;
+                const bonusStep = parseInt(globalCommission.step) || 10;
+                const bonusAmount = parseFloat(globalCommission.amount) || 100;
+
+                for (const [userName, count] of Object.entries(commissionMap)) {
+                    let userTotal = count * basePrice;
+                    if (count >= bonusThreshold) {
+                        const multiplier = Math.floor((count - bonusThreshold) / bonusStep) + 1;
+                        userTotal += (multiplier * bonusAmount);
+                    }
+                    
+                    // Add Tips from teamList
+                    const member = teamList.value.find(u => u.name === userName);
+                    if (member && tips[member.id]) {
+                        userTotal += parseFloat(tips[member.id]);
+                    }
+
+                    totalCommissions += userTotal;
+                }
+
+                const net = ca - totalCommissions;
+
+                return { upcoming, honored, noshow, cancelled, ca, ca_daily, commissions: totalCommissions, net };
+            });
 
             const isLateAndNoStatus = (r) => { if(!r.date || !r.heure) return false; const start = new Date(r.date+'T'+r.heure); const end = new Date(start.getTime() + 60*60*1000); return now.value >= end && ['confirme','a_confirmer'].includes(r.statut); };
             const getProgressPercent = (r) => { if(!r.date || !r.heure) return 0; const start = new Date(r.date+'T'+r.heure).getTime(); const end = start + 3600000; const current = now.value.getTime(); if(current < start) return 0; if(current > end) return 100; return ((current - start) / (end - start)) * 100; };
             const getRdvTimeStatus = (r) => { if(!r.date || !r.heure) return 'futur'; const start = new Date(r.date+'T'+r.heure).getTime(); const current = now.value.getTime(); if(current >= start && current < start + 3600000) return 'en_cours'; if(current < start && (start - current) < 172800000) return 'bientot'; return 'futur'; };
-            const getRelativeRdvLabel = (r) => {
-    if (!r.date || !r.heure) return '';
-
-    const nowDate = now.value ? new Date(now.value) : new Date();
-    const start = new Date(r.date + 'T' + r.heure);
-    const dureeRdvMs = 60 * 60 * 1000; // 1h
-
-    const diffMs = start - nowDate;
-
-    // RDV déjà fini → on n’affiche rien
-    if (diffMs <= -dureeRdvMs) return '';
-
-    // RDV en cours
-    if (diffMs < 0 && diffMs > -dureeRdvMs) {
-        return 'RDV en cours';
-    }
-
-    // RDV à venir
-    const diffMin = Math.round(diffMs / 60000);
-
-    if (diffMin < 1) {
-        return "RDV dans moins d’1 minute";
-    }
-
-    if (diffMin < 60) {
-        return `RDV dans ${diffMin} min`;
-    }
-
-    const diffHours = Math.floor(diffMin / 60);
-    const restMin = diffMin % 60;
-
-    if (diffHours < 24) {
-        if (restMin === 0) {
-            return `RDV dans ${diffHours}h`;
-        }
-        return `RDV dans ${diffHours}h ${restMin}min`;
-    }
-
-    const diffDays = Math.round(diffMin / (24 * 60));
-    if (diffDays === 1) {
-        return 'RDV dans 1 jour';
-    }
-    return `RDV dans ${diffDays} jours`;
-};
-// 🔜 Prochain RDV d'aujourd'hui (texte "RDV dans X min")
-const nextRdvLabel = computed(() => {
-    if (!rdvList.value || rdvList.value.length === 0) return '';
-
-    const todayStr = new Date().toISOString().split('T')[0];
-    const nowDate = now.value ? new Date(now.value) : new Date();
-
-    // RDV d'aujourd'hui, non poubelle, avec une heure, et dans le futur
-    const candidates = rdvList.value
-        .filter(r =>
-            r.date === todayStr &&
-            r.statut !== 'poubelle' &&
-            r.heure
-        )
-        .map(r => ({ rdv: r, start: new Date(r.date + 'T' + r.heure) }))
-        .filter(o => o.start > nowDate);
-
-    if (candidates.length === 0) return '';
-
-    // On prend le plus proche dans le futur
-    candidates.sort((a, b) => a.start - b.start);
-
-    return getRelativeRdvLabel(candidates[0].rdv);
-});
+            const getRelativeRdvLabel = (r) => { if (!r.date || !r.heure) return ''; const nowDate = now.value ? new Date(now.value) : new Date(); const start = new Date(r.date + 'T' + r.heure); const dureeRdvMs = 60 * 60 * 1000; const diffMs = start - nowDate; if (diffMs <= -dureeRdvMs) return ''; if (diffMs < 0 && diffMs > -dureeRdvMs) { return 'RDV en cours'; } const diffMin = Math.round(diffMs / 60000); if (diffMin < 1) { return "RDV dans moins d’1 minute"; } if (diffMin < 60) { return `RDV dans ${diffMin} min`; } const diffHours = Math.floor(diffMin / 60); const restMin = diffMin % 60; if (diffHours < 24) { if (restMin === 0) { return `RDV dans ${diffHours}h`; } return `RDV dans ${diffHours}h ${restMin}min`; } const diffDays = Math.round(diffMin / (24 * 60)); if (diffDays === 1) { return 'RDV dans 1 jour'; } return `RDV dans ${diffDays} jours`; };
+            const nextRdvLabel = computed(() => { if (!rdvList.value || rdvList.value.length === 0) return ''; const todayStr = new Date().toISOString().split('T')[0]; const nowDate = now.value ? new Date(now.value) : new Date(); const candidates = rdvList.value.filter(r => r.date === todayStr && r.statut !== 'poubelle' && r.heure).map(r => ({ rdv: r, start: new Date(r.date + 'T' + r.heure) })).filter(o => o.start > nowDate); if (candidates.length === 0) return ''; candidates.sort((a, b) => a.start - b.start); return getRelativeRdvLabel(candidates[0].rdv); });
             const pendingStatusList = computed(() => { return rdvList.value.filter(r => { if(!['confirme', 'a_confirmer'].includes(r.statut)) return false; if(!r.date || !r.heure) return false; const end = new Date(r.date+'T'+r.heure).getTime() + 3600000; return now.value.getTime() > end; }); });
             const pendingStatusCount = computed(() => pendingStatusList.value.length);
             const displayStatus = (r) => { if(r.statut === 'honore') return user.role==='admin' ? (r.honorBilling==='facture'?'Honoré • Facturé':'Honoré • Non facturé') : 'Honoré'; if(r.statut === 'pas_venu') return 'Pas Venu'; if(r.statut === 'annule') return 'Annulé'; if(r.statut === 'a_confirmer') return 'À Confirmer'; return 'Confirmé'; };
@@ -2858,12 +2594,14 @@ const nextRdvLabel = computed(() => {
                 
                 discountModal, openDiscountModal, saveDiscount, removeDiscount,
                 reminderAlertModal, rappelsVeilleCount, rappelsJourCount,
-                teamEditModal, openTeamEdit, saveTeamMemberEdit,
+                teamEditModal, openTeamEdit, saveTeamMemberEdit, 
                 customConfirmModal, openCustomConfirm, rappelFilters, rappelsDisplay,
                 globalSettings, saveGlobalSettings,
+                pendingStatusModal, 
                 
-                // NEW STATS
-                statsModal, openStatsModal, detailedStats, statsFilterAgency, statsFilterUser, visibleAgencies
+                // NEW STATS & PRICING
+                statsModal, openStatsModal, detailedStats, statsFilterAgency, statsFilterUser, visibleAgencies, userCommissionStats,
+                globalCommission, tips, saveTip
             };
         }
     }).mount('#app');
