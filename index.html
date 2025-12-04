@@ -56,6 +56,11 @@
             box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.5), 0 4px 6px -2px rgba(37, 99, 235, 0.5);
         }
 
+        /* Masquer la flèche du datalist */
+        input::-webkit-calendar-picker-indicator {
+            display: none !important;
+        }
+
         /* --- NOUVEAUX STYLES POUR RENDRE-VOUS EN COURS --- */
         @keyframes status-pulse {
             0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 
@@ -557,7 +562,7 @@
                                 </select>
 
                                 <select v-if="user.role === 'admin'" v-model="dashboardFilters.userId" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-blue-500 shadow-sm">
-                                    <option value="">Tous les utilisateurs</option>
+                                    <option value="">Toute l'équipe</option>
                                     <option v-for="u in allProspectors" :key="u" :value="u">{{ u }}</option>
                                 </select>
 
@@ -708,58 +713,70 @@
                  <span class="text-xs font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">{{ filteredList.length }} RDV trouvé(s)</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 pb-24 md:pb-0">
-                
-                <div v-for="rdv in displayedList" :key="rdv.id" @click="openRdvFiche(rdv)" :class="isEnCours(rdv) ? 'live-animation' : ''" class="group bg-white rounded-3xl p-5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border-2 border-transparent hover:border-blue-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-pointer transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
+            <!-- MODIFICATION DESIGN : AFFICHAGE EN LIGNE COMME LE DASHBOARD -->
+            <div class="space-y-4 pb-24 md:pb-0">
+                <div v-for="rdv in displayedList" :key="rdv.id" @click="openRdvFiche(rdv)" :class="isEnCours(rdv) ? 'live-animation' : ''" class="relative z-10 flex flex-col md:flex-row md:items-center p-4 bg-white rounded-2xl border border-slate-100 hover:border-blue-200 hover:shadow-lg cursor-pointer transition group gap-2 md:gap-0 overflow-hidden">
                     
-                    <div v-if="user.role==='admin'" class="absolute top-4 left-4 z-50 opacity-100 group-hover:opacity-100 transition-opacity" @click.stop>
-                         <input type="checkbox" class="custom-checkbox w-6 h-6 shadow-sm border-2 border-slate-300 rounded" :checked="selectedIds.includes(rdv.id)" @change="toggleSelection(rdv.id)">
-                    </div>
-                    
-                    <div class="absolute top-4 right-4 z-10">
-                        <div v-if="isEnCours(rdv)" class="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-1 rounded-full font-black text-[10px] uppercase tracking-wider border border-green-100 shadow-sm animate-pulse">
-                            <span class="relative flex h-2 w-2">
-                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                            </span>
-                            En Cours
-                        </div>
-                         <span v-else :class="statusClass(rdv.statut)" class="badge-status shadow-sm border border-white/50">{{ displayStatus(rdv) }}</span>
+                    <!-- Selection Checkbox -->
+                    <div v-if="user.role==='admin'" class="absolute top-2 right-2 md:top-auto md:bottom-auto md:left-2 md:right-auto md:relative md:mr-4 z-50" @click.stop>
+                         <input type="checkbox" class="custom-checkbox w-5 h-5 shadow-sm border-2 border-slate-300 rounded" :checked="selectedIds.includes(rdv.id)" @change="toggleSelection(rdv.id)">
                     </div>
 
-                    <div class="flex items-start gap-4 mt-8 md:mt-2 relative z-10">
-                        <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center font-black text-xl border-2 border-white shadow-sm group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
-                            {{ rdv.civilite === 'M.' ? 'M' : 'F' }}
+                    <div class="flex items-center w-full md:w-auto relative z-10">
+                        <!-- Affichage Date & Heure Groupé -->
+                        <div class="flex flex-col items-center bg-slate-50 rounded-xl py-2 px-3 mr-4 shadow-sm border border-slate-100 flex-shrink-0 min-w-[80px]">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">{{ formatDateShort(rdv.date) }}</span>
+                            <span class="font-black text-lg text-slate-600 group-hover:text-blue-600 transition">{{ rdv.heure }}</span>
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <h4 class="font-black text-xl text-slate-800 truncate leading-tight group-hover:text-blue-600 transition">
-                                {{ rdv.nom }} 
-                                <span v-if="rdv.tag === 'OK M'" class="ml-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase shadow-sm align-middle">OK M</span>
-                                <span v-if="rdv.geste_commercial && user.role === 'admin'" class="ml-1 text-red-500 text-lg align-middle" title="Geste Commercial appliqué">🎁</span>
-                            </h4>
-                            <div class="text-sm font-mono font-bold text-slate-400 mt-1 flex items-center gap-1">
+                        
+                        <div class="font-bold text-slate-800 text-lg flex items-center gap-2 md:hidden">{{ rdv.civilite }} {{ rdv.nom }} <i v-if="isEnCours(rdv)" class="fa-solid fa-circle text-[10px] text-green-500 animate-pulse"></i></div>
+                    </div>
+
+                    <div class="flex-1 min-w-0 md:ml-4 relative z-10">
+                        <div class="font-bold text-slate-800 text-lg hidden md:flex items-center gap-2">
+                            {{ rdv.civilite }} {{ rdv.nom }} 
+                            <i v-if="isEnCours(rdv)" class="fa-solid fa-circle text-[10px] text-green-500 animate-pulse"></i>
+                            <span v-if="rdv.tag === 'OK M'" class="ml-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase shadow-sm">OK M</span>
+                            <span v-if="rdv.geste_commercial && user.role === 'admin'" class="ml-2 text-red-500 text-xl animate-bounce-slow" title="Geste Commercial appliqué">🎁</span>
+                            <span v-if="rdv.geste_commercial" class="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full border border-red-200 font-bold animate-fadeIn">
+                                -{{ rdv.geste_commercial }}€
+                            </span>
+                        </div>
+                        
+                        <div v-if="isEnCours(rdv)" class="w-full max-w-xs h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden shadow-inner">
+                            <div class="h-full bg-green-500 transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(34,197,94,0.6)]" :style="{width: getProgressPercent(rdv) + '%'}"></div>
+                        </div>
+
+                        <div class="text-sm text-slate-500 flex flex-wrap items-center gap-2 md:gap-3 mt-1 font-medium">
+                           <span class="bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600">
+                                <i class="fa-solid fa-car text-slate-400"></i> {{ rdv.modele }}
+                            </span>
+                            <span class="flex items-center gap-1 text-xs opacity-70">
                                 <i class="fa-solid fa-phone text-[10px]"></i> {{ rdv.telephone }}
+                            </span>
+                            <span class="flex items-center gap-1 text-xs opacity-70">
+                                <img :src="getLogo(rdv.source)" class="w-4 h-4 rounded-sm"> {{ rdv.source }}
+                            </span>
+                            <span v-if="getRelativeRdvLabel(rdv)" class="text-[11px] font-bold text-orange-500 uppercase">
+                                {{ getRelativeRdvLabel(rdv) }}
+                            </span>
+                            
+                            <div class="w-full mt-1 flex flex-wrap gap-2">
+                                <span class="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                    <i class="fa-solid fa-building"></i> {{ getAgenceName(rdv.agenceId) }}
+                                </span>
+                                <span class="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                    <i class="fa-solid fa-user-tag"></i> {{ rdv.createdBy || 'Système' }}
+                                </span>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="mt-5 bg-slate-50 rounded-2xl p-3 flex flex-wrap justify-between items-center gap-2 text-sm border border-slate-100 group-hover:bg-blue-50/50 group-hover:border-blue-100 transition relative z-10">
-                        <span class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-car-side text-slate-400"></i>{{ rdv.modele }}</span>
-                         <span class="text-[10px] font-black text-blue-500 uppercase bg-blue-100/50 px-2 py-1 rounded-md">{{ getAgenceName(rdv.agenceId) }}</span>
-                    </div>
 
-                    <div class="mt-4 flex justify-between items-center pt-3 border-t border-slate-100 pb-2 relative z-10">
-                        <div class="flex items-center gap-2 text-slate-600 font-bold text-sm">
-                             <i class="fa-regular fa-calendar text-slate-400"></i>
-                             <span>{{ formatDateLong(rdv.date) }}</span>
-                        </div>
-                        <div class="font-bold text-sm text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg group-hover:bg-blue-100 group-hover:text-blue-700 transition">
-                            {{ rdv.heure }}
-                        </div>
-                    </div>
-                    
-                    <div v-if="getRelativeRdvLabel(rdv) && !isEnCours(rdv)" class="absolute bottom-0 left-0 right-0 bg-orange-50 text-orange-500 text-center text-[10px] font-bold uppercase py-1 border-t border-orange-100">
-                         {{ getRelativeRdvLabel(rdv) }}
+                    <div class="flex items-center justify-between md:justify-end mt-2 md:mt-0 relative z-10">
+                        <div v-if="isEnCours(rdv)" class="status-label-active mr-4"><span class="live-dot"></span>Rendez-vous en cours</div>
+                        <div v-else-if="isLateAndNoStatus(rdv)" class="mr-4 bg-purple-100 text-purple-600 px-3 py-1 rounded-full font-bold text-xs animate-pulse border border-purple-200 shadow-sm"><i class="fa-solid fa-clipboard-question"></i> STATUT ?</div>
+                        <span v-else :class="statusClass(rdv.statut)" class="badge-status shadow-sm">{{ displayStatus(rdv) }}</span>
+                        <div class="ml-4 text-slate-300 group-hover:text-blue-500 transition"><i class="fa-solid fa-chevron-right"></i></div>
                     </div>
                 </div>
             </div>
@@ -936,10 +953,12 @@
     </div>
 
     <!-- Liste des rappels / confirmations -->
+    <!-- AJOUT CLICK SUR LIGNE ET CLICK STOP SUR BOUTONS -->
     <div
         v-for="r in (view==='rappels' ? rappelsDisplay : confirmList)"
         :key="r.id"
-        class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border-l-4 flex flex-col md:flex-row justify-between items-start md:items-center hover:shadow-md transition gap-4"
+        @click="openRdvFiche(r)"
+        class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border-l-4 flex flex-col md:flex-row justify-between items-start md:items-center hover:shadow-md transition gap-4 cursor-pointer"
         :class="view==='rappels' ? 'border-red-500' : 'border-orange-500'"
     >
         <div>
@@ -954,7 +973,7 @@
             </div>
         </div>
 
-        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+        <div class="flex flex-wrap gap-2 w-full md:w-auto" @click.stop>
             <a
                 :href="generateMsgLink(r, view==='rappels' ? getRappelType(r) : 'confirm')"
                 target="_blank"
@@ -973,7 +992,7 @@
 
             <button
                 v-if="view==='confirmations'"
-                @click.stop="quickCancel(r)"
+                @click="quickCancel(r)"
                 class="bg-white text-red-500 border border-red-200 px-4 py-2 rounded-xl font-bold hover:bg-red-50"
             >
                 <i class="fa-solid fa-xmark"></i>
@@ -1186,7 +1205,7 @@
                  <div>
                     <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">Filtrer par Commercial</label>
                     <select v-model="statsFilterUser" class="w-full p-2 border border-slate-200 rounded-xl font-bold text-slate-700">
-                        <option value="">Tous les commerciaux</option>
+                        <option value="">Toute l'équipe</option>
                         <option v-for="u in allProspectors" :key="u" :value="u">{{ u }}</option>
                     </select>
                  </div>
@@ -1227,6 +1246,7 @@
             <div class="space-y-3">
                 <input v-model="teamEditModal.name" placeholder="Nom" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500">
                 <input v-model="teamEditModal.email" placeholder="Email / Identifiant" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500">
+                <input v-model="teamEditModal.password" placeholder="Nouveau mot de passe (optionnel)" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500" autocomplete="new-password">
             </div>
             
             <div class="mt-4 border-t pt-4">
@@ -1316,6 +1336,30 @@
 
                 <div v-if="settingsModal.tab==='Admins'" class="space-y-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-lg mb-4 text-slate-700">Configuration Globale</h3>
+                        <!-- CONFIG NOTIF HEURE -->
+                        <div class="mb-6 flex flex-col gap-4 border p-4 rounded-xl bg-slate-50">
+                            <!-- RAPPEL JOUR J -->
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 uppercase block mb-1">Heure début notifications Rappels (Jour J)</label>
+                                    <p class="text-xs text-gray-400">Avant cette heure, pas d'alerte pour les RDV d'aujourd'hui.</p>
+                                </div>
+                                <input type="time" v-model="globalSettings.reminderStartTime" class="p-2 border rounded-lg font-bold text-slate-700 bg-white shadow-sm w-32">
+                            </div>
+                            
+                            <!-- RAPPEL VEILLE (NOUVEAU) -->
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-t border-slate-200 pt-4">
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 uppercase block mb-1">Heure début notifications Rappels (Veille)</label>
+                                    <p class="text-xs text-gray-400">Avant cette heure, pas d'alerte pour les RDV de demain.</p>
+                                </div>
+                                <input type="time" v-model="globalSettings.reminderEveTime" class="p-2 border rounded-lg font-bold text-slate-700 bg-white shadow-sm w-32">
+                            </div>
+
+                            <button @click="saveGlobalSettings" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-blue-700 transition self-end mt-2">Sauvegarder</button>
+                        </div>
+
                         <h3 class="font-bold text-lg mb-4 text-slate-700">Gérer les Noms d'Administrateurs</h3>
                         <div class="flex gap-2 mb-6">
                             <input v-model="newAdminName" placeholder="Nouveau prénom (ex: Charlène)" class="flex-1 p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50">
@@ -1327,7 +1371,6 @@
                                 <button @click="removeAdminName(name)" class="text-gray-300 hover:text-red-500 transition"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-400 mt-4 italic">Ces noms seront proposés lors de la connexion avec le compte Administrateur.</p>
                     </div>
                 </div>
                 
@@ -1389,16 +1432,154 @@
     <!-- EDITING AGENCY Z-INDEX FIX -->
     <div v-if="editingAgency" class="fixed inset-0 bg-slate-900/80 z-[350] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-6 fade-in max-h-[90vh] overflow-y-auto"><h3 class="font-bold text-xl mb-6 text-slate-800">{{ editingAgency.id ? 'Modifier' : 'Nouvelle' }} Agence</h3><div class="space-y-4"><div><label class="text-xs font-bold text-gray-500 uppercase">Nom</label><input v-model="editingAgency.nom" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50 font-bold"></div><div><label class="text-xs font-bold text-gray-500 uppercase">Adresse Postale</label><input v-model="editingAgency.adresse" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50"></div><div><label class="text-xs font-bold text-gray-500 uppercase">Lien Google Maps (Short)</label><input v-model="editingAgency.maps" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50 text-blue-600"></div><div><label class="text-xs font-bold text-gray-500 uppercase">Phrase d'accroche (SMS)</label><input v-model="editingAgency.tagline" placeholder="Ex: votre expert rachat" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-xs font-bold text-gray-500 uppercase">Prix HT (€)</label><input type="number" v-model="editingAgency.prix_ht" @input="calculateTTC" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50"></div><div><label class="text-xs font-bold text-gray-500 uppercase">TVA (%)</label><input type="number" v-model="editingAgency.tva_taux" @input="calculateTTC" placeholder="20" class="w-full p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50"></div></div><div class="flex items-center justify-between p-3 bg-slate-100 rounded-xl"><span class="font-bold text-slate-700">Prix Affiché (TTC)</span><span class="text-xl font-black text-blue-600">{{ formatPrice(editingAgency.prix) }}</span></div><div><label class="flex items-center gap-2 font-bold text-slate-700 cursor-pointer"><input type="checkbox" v-model="editingAgency.tva" class="custom-checkbox"> <span>Afficher "TTC" dans les SMS</span></label></div><div class="pt-4 border-t"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">État de l'agence</label><div class="flex gap-2"><button @click="editingAgency.statut_activite='actif'" :class="editingAgency.statut_activite==='actif' ? 'bg-green-500 text-white shadow-md' : 'bg-slate-100 text-slate-500'" class="flex-1 py-2 rounded-xl font-bold transition">Actif</button><button @click="editingAgency.statut_activite='pause'" :class="editingAgency.statut_activite==='pause' ? 'bg-red-500 text-white shadow-md' : 'bg-slate-100 text-slate-500'" class="flex-1 py-2 rounded-xl font-bold transition">En Pause</button></div></div><div v-if="editingAgency.statut_activite==='pause'" class="space-y-3 bg-red-50 p-4 rounded-xl border border-red-100 animate-fadeIn"><div><label class="text-xs font-bold text-red-500 uppercase">Motif de la pause</label><select v-model="pauseReasonSelect" @change="updatePauseReason" class="w-full p-2 border border-red-200 rounded-lg outline-none bg-white font-bold text-slate-700 mt-1"><option value="Vacances">Vacances</option><option value="Complet">Complet / Surchargé</option><option value="Travaux">Travaux</option><option value="Autre">Autre (personnalisé)</option></select><input v-if="pauseReasonSelect==='Autre'" v-model="editingAgency.motif_pause" placeholder="Précisez le motif..." class="w-full mt-2 p-2 border border-red-200 rounded-lg outline-none bg-white"></div><div v-if="pauseReasonSelect==='Vacances'" class="grid grid-cols-2 gap-2"><div><label class="text-[10px] font-bold text-red-400 uppercase">Début</label><input type="date" v-model="editingAgency.date_pause_debut" class="w-full p-2 border border-red-200 rounded-lg bg-white text-sm"></div><div><label class="text-[10px] font-bold text-red-400 uppercase">Fin (inclus)</label><input type="date" v-model="editingAgency.date_pause_fin" class="w-full p-2 border border-red-200 rounded-lg bg-white text-sm"></div></div></div></div><div class="flex gap-4 mt-6"><button @click="editingAgency=null" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Annuler</button><button @click="saveEditingAgency" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700">Enregistrer</button></div></div></div>
     <!-- WIZARD Z-INDEX FIX -->
-    <div v-if="wizard.open" class="fixed inset-0 bg-slate-900/80 z-[400] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] fade-in"><div class="bg-slate-50 p-4 flex justify-between items-center border-b"><h3 class="font-bold text-lg">Nouveau Rendez-Vous</h3><button @click="wizard.open=false" class="w-8 h-8 rounded-full hover:bg-slate-200">✕</button></div><div class="p-6 overflow-y-auto space-y-6"><div v-if="wizard.step===1"><h4 class="text-center font-bold text-xl mb-4">Choisir l'agence</h4><div class="mb-4 relative"><i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400"></i><input v-model="agencySearch" placeholder="Rechercher une agence..." class="w-full pl-10 p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50 font-bold"></div><div class="grid grid-cols-1 gap-3 max-h-[50vh] overflow-y-auto"><button v-for="ag in filteredAgences" @click="checkAgenceAndProceed(ag)" :class="ag.statut_activite==='pause' ? 'border-red-200 bg-red-50 hover:bg-red-100' : 'border-slate-200 hover:border-blue-500 hover:bg-blue-50'" class="p-4 border-2 rounded-xl text-left transition group relative flex flex-col justify-center min-h-[80px]"><div class="font-bold text-lg leading-tight text-slate-800 group-hover:text-blue-600 mb-1">{{ ag.nom }}</div><div class="text-[10px] text-gray-400 truncate opacity-70 group-hover:opacity-100">{{ ag.adresse }}</div><div v-if="ag.statut_activite==='pause'" class="absolute top-2 right-2 text-red-500 bg-white rounded-full px-1.5 py-0.5 text-[10px] font-bold shadow-sm border border-red-100"><i class="fa-solid fa-pause"></i></div></button><div v-if="filteredAgences.length === 0" class="col-span-1 text-center text-gray-400 py-4 italic">Aucune agence trouvée.</div></div></div><div v-if="wizard.step===2"><h4 class="text-center font-bold text-xl mb-4">Client</h4><div class="flex justify-center gap-4 mb-4"><button @click="form.civilite='M.'" :class="form.civilite==='M.'?'bg-blue-600 text-white':'bg-gray-100'" class="px-6 py-2 rounded-full font-bold">Monsieur</button><button @click="form.civilite='Mme'" :class="form.civilite==='Mme'?'bg-pink-500 text-white':'bg-gray-100'" class="px-6 py-2 rounded-full font-bold">Madame</button></div><div class="mb-4"><input v-model="form.nom" placeholder="Nom ou Prénom" class="w-full text-center text-lg border-b-2 p-2 outline-none focus:border-blue-600"></div><div class="relative"><input type="tel" inputmode="numeric" pattern="[0-9]*" :value="form.telephone" @input="onWizardPhoneInput" placeholder="06 12 34 56 78" class="w-full text-center text-2xl font-mono border-b-2 p-2 outline-none focus:border-blue-600 tracking-[0.3em] bg-transparent"><p v-if="clientExists" class="text-green-600 text-xs text-center mt-2 font-bold animate-pulse">✨ Client existant détecté ! Infos remplies.</p></div><div class="flex gap-2 mt-6"><button @click="wizard.step--" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Retour</button><button @click="wizard.step++" :disabled="!form.nom || normalizePhone(form.telephone).length<10" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold disabled:opacity-50">Suivant</button></div></div><div v-if="wizard.step===3" class="flex flex-col h-full"><h4 class="text-center font-bold text-xl mb-4 text-slate-800">Date & Heure du RDV</h4><div class="mb-4"><div class="flex items-center justify-between mb-2"><h5 class="text-xs font-black uppercase text-slate-500 tracking-wider"><i class="fa-solid fa-calendar-alt text-blue-500"></i> Choisir le Jour :</h5><input type="date" v-model="form.date" @change="form.heure=null" class="p-1 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm cursor-pointer hover:bg-blue-50"></div><div class="overflow-x-auto pb-2 hide-scrollbar snap-x flex space-x-2"><button v-for="d in dateOptions" :key="d.val" @click="form.date=d.val; form.heure=null;" :class="[form.date===d.val ? 'bg-blue-600 text-white shadow-lg transform scale-[1.05] date-card-selected' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-400', d.isToday ? 'border-2 border-green-500 shadow-md' : '']" class="flex-shrink-0 w-16 h-20 rounded-lg flex flex-col items-center justify-center text-sm transition-all duration-300 snap-center date-card p-1"><span :class="form.date===d.val ? 'text-blue-200' : 'text-slate-400'" class="text-[9px] font-bold uppercase mb-0 transition-colors">{{ d.dayName }}</span><span class="text-2xl font-black leading-none">{{ d.dayNum }}</span><span class="text-[9px] font-medium opacity-80 mt-1">{{ d.month }}</span></button></div></div><div v-if="form.date" class="overflow-y-auto hide-scrollbar flex-1 p-2 border border-slate-100 rounded-lg bg-white shadow-inner animate-fadeIn max-h-[300px]"><h5 class="text-xs font-black uppercase text-slate-500 tracking-wider mb-2"><i class="fa-solid fa-clock text-green-500"></i> Choisir l'Heure (09:00 à 18:00) :</h5><div class="space-y-3"><div class="grid grid-cols-4 gap-2"><button v-for="h in timeSlots" :key="h" @click="form.heure=h" :class="form.heure===h ? 'bg-green-500 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-green-50'" class="py-1.5 rounded-md text-xs font-bold transition-all duration-200">{{ h }}</button></div><div class="pt-2 flex justify-center border-t border-slate-100"><input type="time" v-model="form.heure" class="border-2 border-blue-100 rounded-lg p-2 font-bold text-blue-900 text-center text-sm outline-none focus:border-blue-500 bg-blue-50 w-32"></div></div></div><div v-else class="flex-1 flex items-center justify-center text-center text-gray-400 border border-dashed border-gray-200 rounded-2xl"><p class="text-sm font-medium p-8">📅 Veuillez d'abord sélectionner une date ci-dessus.</p></div><div class="mt-4 flex gap-2"><button @click="wizard.step--" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Retour</button><button @click="wizard.step++" :disabled="!form.date || !form.heure" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 transition transform active:scale-95 disabled:opacity-50">Suivant <i class="fa-solid fa-arrow-right"></i></button></div></div><div v-if="wizard.step===4"><h4 class="text-center font-bold text-xl mb-4">Détails</h4><input v-model="form.modele" placeholder="Véhicule (ex: Clio 4)" class="w-full text-center text-xl border-b-2 p-2 outline-none mb-6 focus:border-blue-600"><p class="text-xs font-bold text-gray-400 mb-2 text-center">SOURCE</p><div class="flex flex-wrap justify-center gap-3"><button v-for="src in sourcesList" @click="selectSource(src)" :class="form.source === src ? 'border-blue-500 bg-blue-100 shadow-md' : 'border-slate-200 bg-white shadow-sm'" class="px-4 py-2 rounded-full border hover:bg-blue-50 flex items-center gap-2 transition"><img :src="getLogo(src)" class="w-5 h-5 rounded"> {{ src }}</button></div><div class="flex gap-2 mt-6"><button @click="wizard.step--" class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Retour</button><button @click="wizard.step++" :disabled="!form.modele || !form.source" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold disabled:opacity-50">Suivant</button></div></div><div v-if="wizard.step===5"><h4 class="text-center font-bold text-xl mb-4 text-blue-900">Récapitulatif</h4><div class="bg-slate-50 p-4 rounded-xl space-y-2 text-sm border border-slate-200"><div class="flex justify-between"><span>Client</span> <b>{{ form.civilite }} {{ form.nom }}</b></div><div class="flex justify-between"><span>Tel</span> <b>{{ form.telephone }}</b></div><div class="flex justify-between"><span>Date</span> <b>{{ formatDateFr(form.date) }} à {{ form.heure }}</b></div><div class="flex justify-between"><span>Véhicule</span> <b>{{ form.modele }}</b></div><div class="flex justify-between"><span>Agence</span> <b>{{ form.agence.nom }}</b></div><div v-if="user.role==='admin'" class="flex justify-between pt-2 border-t mt-2"><span>Prix estimé</span> <b :class="form.agence.tva ? 'text-blue-600' : 'text-gray-600'">{{ formatPrice(form.agence.prix) }} {{ form.agence.tva ? 'TTC' : 'HT' }}</b></div></div><div class="grid grid-cols-2 gap-2 mt-4"><button @click="wizard.step--" class="bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Retour</button><button @click="finalizeRdv('a_confirmer')" class="bg-orange-100 text-orange-700 py-3 rounded-xl font-bold hover:bg-orange-200">Confirmer + Tard</button></div><a :href="generateMsgLink(form, 'confirm')" @click="finalizeRdv('confirme')" target="_blank" class="block w-full bg-green-500 text-white py-4 rounded-2xl font-bold text-center shadow-xl hover:bg-green-600 mt-2 flex items-center justify-center gap-2"><i class="fa-solid fa-paper-plane"></i> SMS & Valider</a></div></div></div></div>
+    <div v-if="wizard.open" class="fixed inset-0 bg-slate-900/80 z-[400] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] fade-in">
+            <div class="bg-slate-50 p-4 flex justify-between items-center border-b">
+                <h3 class="font-bold text-lg">Nouveau Rendez-Vous</h3>
+                <button @click="wizard.open=false" class="w-8 h-8 rounded-full hover:bg-slate-200">✕</button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-6">
+                <!-- STEP 1: AGENCE -->
+                <div v-if="wizard.step===1">
+                    <h4 class="text-center font-bold text-xl mb-4">Choisir l'agence</h4>
+                    <div class="mb-4 relative">
+                        <i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                        <input v-model="agencySearch" placeholder="Rechercher une agence..." class="w-full pl-10 p-3 border rounded-xl outline-none focus:border-blue-500 bg-slate-50 font-bold">
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 max-h-[50vh] overflow-y-auto">
+                        <button v-for="ag in filteredAgences" @click="checkAgenceAndProceed(ag)" :class="ag.statut_activite==='pause' ? 'border-red-200 bg-red-50 hover:bg-red-100' : 'border-slate-200 hover:border-blue-500 hover:bg-blue-50'" class="p-4 border-2 rounded-xl text-left transition group relative flex flex-col justify-center min-h-[80px]">
+                            <div class="font-bold text-lg leading-tight text-slate-800 group-hover:text-blue-600 mb-1">{{ ag.nom }}</div>
+                            <div class="text-[10px] text-gray-400 truncate opacity-70 group-hover:opacity-100">{{ ag.adresse }}</div>
+                            <div v-if="ag.statut_activite==='pause'" class="absolute top-2 right-2 text-red-500 bg-white rounded-full px-1.5 py-0.5 text-[10px] font-bold shadow-sm border border-red-100"><i class="fa-solid fa-pause"></i></div>
+                        </button>
+                        <div v-if="filteredAgences.length === 0" class="col-span-1 text-center text-gray-400 py-4 italic">Aucune agence trouvée.</div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: CLIENT -->
+                <div v-if="wizard.step===2">
+                    <h4 class="text-center font-bold text-xl mb-4">Client</h4>
+                    <div class="flex justify-center gap-4 mb-4">
+                        <button @click="form.civilite='M.'" :class="form.civilite==='M.'?'bg-blue-600 text-white':'bg-gray-100'" class="px-6 py-2 rounded-full font-bold">Monsieur</button>
+                        <button @click="form.civilite='Mme'" :class="form.civilite==='Mme'?'bg-pink-500 text-white':'bg-gray-100'" class="px-6 py-2 rounded-full font-bold">Madame</button>
+                    </div>
+                    <div class="mb-4">
+                        <input v-model="form.nom" placeholder="Nom ou Prénom" class="w-full text-center text-lg border-b-2 p-2 outline-none focus:border-blue-600">
+                    </div>
+                    <!-- PHONE INPUT AVEC PASTE BUTTON -->
+                    <div class="relative flex items-center justify-center">
+                        <input type="tel" inputmode="numeric" pattern="[0-9]*" :value="form.telephone" @input="onWizardPhoneInput" placeholder="06 12 34 56 78" class="w-full text-center text-2xl font-mono border-b-2 p-2 outline-none focus:border-blue-600 tracking-[0.3em] bg-transparent">
+                        <button @click="pastePhoneNumber" class="absolute right-0 top-2 text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-full shadow-sm transition" title="Coller le numéro">
+                            <i class="fa-solid fa-paste"></i>
+                        </button>
+                    </div>
+                    <p v-if="clientExists" class="text-green-600 text-xs text-center mt-2 font-bold animate-pulse">✨ Client existant détecté ! Infos remplies.</p>
+                    <div class="flex gap-2 mt-6">
+                        <button @click="wizard.step--" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Retour</button>
+                        <button @click="wizard.step++" :disabled="!form.nom || normalizePhone(form.telephone).length<10" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold disabled:opacity-50">Suivant</button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: DATE & HEURE -->
+                <div v-if="wizard.step===3" class="flex flex-col h-full">
+                    <h4 class="text-center font-bold text-xl mb-4 text-slate-800">Date & Heure du RDV</h4>
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h5 class="text-xs font-black uppercase text-slate-500 tracking-wider"><i class="fa-solid fa-calendar-alt text-blue-500"></i> Choisir le Jour :</h5>
+                            <input type="date" v-model="form.date" @change="form.heure=null" class="p-1 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm cursor-pointer hover:bg-blue-50">
+                        </div>
+                        <div class="overflow-x-auto pb-2 hide-scrollbar snap-x flex space-x-2">
+                            <button v-for="d in dateOptions" :key="d.val" @click="form.date=d.val; form.heure=null;" :class="[form.date===d.val ? 'bg-blue-600 text-white shadow-lg transform scale-[1.05] date-card-selected' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-400', d.isToday ? 'border-2 border-green-500 shadow-md' : '']" class="flex-shrink-0 w-16 h-20 rounded-lg flex flex-col items-center justify-center text-sm transition-all duration-300 snap-center date-card p-1">
+                                <span :class="form.date===d.val ? 'text-blue-200' : 'text-slate-400'" class="text-[9px] font-bold uppercase mb-0 transition-colors">{{ d.dayName }}</span>
+                                <span class="text-2xl font-black leading-none">{{ d.dayNum }}</span>
+                                <span class="text-[9px] font-medium opacity-80 mt-1">{{ d.month }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div v-if="form.date" class="overflow-y-auto hide-scrollbar flex-1 p-2 border border-slate-100 rounded-lg bg-white shadow-inner animate-fadeIn max-h-[300px]">
+                        <h5 class="text-xs font-black uppercase text-slate-500 tracking-wider mb-2"><i class="fa-solid fa-clock text-green-500"></i> Choisir l'Heure (09:00 - 19:00) :</h5>
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-4 gap-2">
+                                <button v-for="h in timeSlots" :key="h" @click="form.heure=h" :class="form.heure===h ? 'bg-green-500 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-green-50'" class="py-1.5 rounded-md text-xs font-bold transition-all duration-200">{{ h }}</button>
+                            </div>
+                            <div class="pt-2 flex justify-center border-t border-slate-100">
+                                <input type="time" v-model="form.heure" class="border-2 border-blue-100 rounded-lg p-2 font-bold text-blue-900 text-center text-sm outline-none focus:border-blue-500 bg-blue-50 w-32">
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="flex-1 flex items-center justify-center text-center text-gray-400 border border-dashed border-gray-200 rounded-2xl"><p class="text-sm font-medium p-8">📅 Veuillez d'abord sélectionner une date ci-dessus.</p></div>
+                    <div class="mt-4 flex gap-2">
+                        <button @click="wizard.step--" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Retour</button>
+                        <button @click="wizard.step++" :disabled="!form.date || !form.heure" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 transition transform active:scale-95 disabled:opacity-50">Suivant <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: VÉHICULE (LARGE CHOIX) -->
+                <div v-if="wizard.step===4">
+                    <h4 class="text-center font-bold text-xl mb-6">Véhicule</h4>
+                    <div class="flex flex-col items-center justify-center h-full py-4">
+                        <div class="w-full relative group">
+                            <i class="fa-solid fa-car absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-blue-500 transition"></i>
+                            <input v-model="form.modele" list="car-models" placeholder="Marque, Modèle, Finition..." class="w-full pl-12 p-4 text-lg border-2 border-slate-200 rounded-2xl outline-none focus:border-blue-600 transition bg-slate-50 focus:bg-white font-bold text-slate-700">
+                            <!-- DATALIST FOR AUTOCOMPLETE -->
+                            <datalist id="car-models">
+                                <option v-for="car in commonCars" :key="car" :value="car"></option>
+                            </datalist>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-3 text-center">Tapez pour voir les suggestions ou écrivez librement.</p>
+                    </div>
+                    <div class="flex gap-2 mt-8">
+                        <button @click="wizard.step--" class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Retour</button>
+                        <button @click="wizard.step++" :disabled="!form.modele" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold disabled:opacity-50">Suivant</button>
+                    </div>
+                </div>
+
+                <!-- STEP 5: SOURCE -->
+                <div v-if="wizard.step===5">
+                    <h4 class="text-center font-bold text-xl mb-6">Source du RDV</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button v-for="src in sourcesList" @click="selectSource(src)" :class="form.source === src ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-slate-200 bg-white hover:border-blue-300'" class="p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition transform active:scale-95 shadow-sm">
+                            <img :src="getLogo(src)" class="w-10 h-10 rounded-lg object-contain">
+                            <span class="font-bold text-slate-700">{{ src }}</span>
+                        </button>
+                    </div>
+                    <div class="flex gap-2 mt-8">
+                        <button @click="wizard.step--" class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Retour</button>
+                    </div>
+                </div>
+
+                <!-- STEP 6: RÉCAPITULATIF (FIN) -->
+                <div v-if="wizard.step===6">
+                    <h4 class="text-center font-bold text-xl mb-4 text-blue-900">Récapitulatif</h4>
+                    <div class="bg-slate-50 p-4 rounded-xl space-y-2 text-sm border border-slate-200 shadow-sm">
+                        <div class="flex justify-between"><span>Client</span> <b>{{ form.civilite }} {{ form.nom }}</b></div>
+                        <div class="flex justify-between"><span>Tel</span> <b>{{ form.telephone }}</b></div>
+                        <div class="flex justify-between"><span>Date</span> <b>{{ formatDateFr(form.date) }} à {{ form.heure }}</b></div>
+                        <div class="flex justify-between"><span>Véhicule</span> <b>{{ form.modele }}</b></div>
+                        <div class="flex justify-between"><span>Source</span> <b>{{ form.source }}</b></div>
+                        <div class="flex justify-between border-t pt-2 mt-2"><span>Agence</span> <b class="text-blue-600">{{ form.agence.nom }}</b></div>
+                        <div v-if="user.role==='admin'" class="flex justify-between"><span>Prix estimé</span> <b :class="form.agence.tva ? 'text-slate-700' : 'text-gray-500'">{{ formatPrice(form.agence.prix) }} {{ form.agence.tva ? 'TTC' : 'HT' }}</b></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-4">
+                        <button @click="wizard.step--" class="bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Retour</button>
+                        <button @click="finalizeRdv('a_confirmer')" class="bg-orange-100 text-orange-700 py-3 rounded-xl font-bold hover:bg-orange-200">Confirmer + Tard</button>
+                    </div>
+                    <a :href="generateMsgLink(form, 'confirm')" @click="finalizeRdv('confirme')" target="_blank" class="block w-full bg-green-500 text-white py-4 rounded-2xl font-bold text-center shadow-xl hover:bg-green-600 mt-2 flex items-center justify-center gap-2 transform active:scale-95 transition">
+                        <i class="fa-solid fa-paper-plane"></i> SMS & Valider
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- CANCEL MODAL Z-INDEX FIX -->
     <div v-if="cancelModal.open" class="fixed inset-0 bg-slate-900/60 z-[350] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center"><h3 class="font-bold text-lg mb-4">Qui a annulé ?</h3><div class="space-y-3"><a :href="generateLink(cancelModal.rdv, 'cancel_clt')" target="_blank" @click="confirmCancel(cancelModal.rdv, 'client')" class="block w-full bg-slate-100 hover:bg-slate-200 py-3 rounded-xl font-bold text-slate-700 transition">Le Client</a><a :href="generateLink(cancelModal.rdv, 'cancel_ag')" target="_blank" @click="confirmCancel(cancelModal.rdv, 'agence')" class="block w-full bg-slate-100 hover:bg-slate-200 py-3 rounded-xl font-bold text-slate-700 transition">L'Agence</a><button @click="cancelModal.open=false" class="block w-full mt-4 text-gray-400 hover:text-gray-600 text-sm font-bold">Retour</button></div></div></div>
     
-    <!-- PAUSED AGENCY Z-INDEX FIX -->
-    <div v-if="pausedAgencyModal.open" class="fixed inset-0 bg-slate-900/60 z-[350] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm text-center animate-shake border-4 border-red-100"><div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-ban"></i></div><h3 class="font-bold text-xl mb-2 text-slate-800">Agence Indisponible</h3><p class="text-slate-600 mb-6 font-medium">{{ getPauseMessage(pausedAgencyModal.agency) }}</p><button @click="pausedAgencyModal.open=false" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition">Compris</button></div></div>
+    <!-- PAUSED AGENCY Z-INDEX FIX (Z-INDEX 500 pour être devant Wizard) -->
+    <div v-if="pausedAgencyModal.open" class="fixed inset-0 bg-slate-900/60 z-[500] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm text-center animate-shake border-4 border-red-100"><div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-ban"></i></div><h3 class="font-bold text-xl mb-2 text-slate-800">Agence Indisponible</h3><p class="text-slate-600 mb-6 font-medium">{{ getPauseMessage(pausedAgencyModal.agency) }}</p><button @click="pausedAgencyModal.open=false" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition">Compris</button></div></div>
     
     <!-- RESCHEDULE Z-INDEX FIX -->
-    <div v-if="rescheduleModal.open" class="fixed inset-0 bg-slate-900/80 z-[350] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] fade-in"><div class="bg-slate-50 p-4 flex justify-between items-center border-b"><h3 class="font-bold text-lg text-slate-800">📅 Reporter Rendez-Vous</h3><button @click="rescheduleModal.open=false" class="w-8 h-8 rounded-full hover:bg-slate-200">✕</button></div><div v-if="rescheduleModal.step===1" class="p-6 overflow-y-auto space-y-4"><p class="text-sm font-bold text-blue-600 text-center mb-4">RDV Actuel: {{ formatDateFr(rescheduleModal.rdv.date) }} à {{ rescheduleModal.rdv.heure }}</p><div class="mb-4"><div class="flex items-center justify-between mb-2"><h5 class="text-xs font-black uppercase text-slate-500 tracking-wider"><i class="fa-solid fa-calendar-alt text-blue-500"></i> Choisir le Nouveau Jour :</h5><input type="date" v-model="rescheduleModal.date" @change="rescheduleModal.heure=null" class="p-1 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm cursor-pointer hover:bg-blue-50"></div><div class="overflow-x-auto pb-2 hide-scrollbar snap-x flex space-x-2"><button v-for="d in dateOptions" :key="d.val" @click="rescheduleModal.date=d.val; rescheduleModal.heure=null;" :class="[rescheduleModal.date===d.val ? 'bg-blue-600 text-white shadow-lg transform scale-[1.05] date-card-selected' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-400', d.isToday ? 'border-2 border-green-500 shadow-md' : '']" class="flex-shrink-0 w-16 h-20 rounded-lg flex flex-col items-center justify-center text-sm transition-all duration-300 snap-center date-card p-1"><span :class="rescheduleModal.date===d.val ? 'text-blue-200' : 'text-slate-400'" class="text-[9px] font-bold uppercase mb-0 transition-colors">{{ d.dayName }}</span><span class="text-2xl font-black leading-none">{{ d.dayNum }}</span><span class="text-[9px] font-medium opacity-80 mt-1">{{ d.month }}</span></button></div></div><div v-if="rescheduleModal.date" class="overflow-y-auto hide-scrollbar p-2 border border-slate-100 rounded-lg bg-white shadow-inner animate-fadeIn max-h-[300px]"><h5 class="text-xs font-black uppercase text-slate-500 tracking-wider mb-2"><i class="fa-solid fa-clock text-green-500"></i> Choisir la Nouvelle Heure (09:00 à 18:00) :</h5><div class="space-y-3"><div class="grid grid-cols-4 gap-2"><button v-for="h in timeSlots" :key="h" @click="rescheduleModal.heure=h" :class="rescheduleModal.heure===h ? 'bg-green-500 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-green-50'" class="py-1.5 rounded-md text-xs font-bold transition-all duration-200">{{ h }}</button></div><div class="pt-2 flex justify-center border-t border-slate-100"><input type="time" v-model="rescheduleModal.heure" class="border-2 border-blue-100 rounded-lg p-2 font-bold text-blue-900 text-center text-sm outline-none focus:border-blue-500 bg-blue-50 w-32"></div></div></div><div v-else class="flex-1 flex items-center justify-center text-center text-gray-400 border border-dashed border-gray-200 rounded-2xl"><p class="text-sm font-medium p-8">📅 Veuillez d'abord sélectionner une date ci-dessus.</p></div><div class="flex gap-2 mt-4"><button @click="rescheduleModal.open=false" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Annuler</button><button @click="confirmRescheduleStep1" :disabled="!rescheduleModal.date || !rescheduleModal.heure || (rescheduleModal.date === rescheduleModal.rdv.date && rescheduleModal.heure === rescheduleModal.rdv.heure)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 transition transform active:scale-95 disabled:opacity-50">Confirmer Report <i class="fa-solid fa-arrow-right"></i></button></div></div><div v-if="rescheduleModal.step===2" class="p-8 text-center animate-fadeIn flex flex-col items-center justify-center h-full"><div class="w-20 h-20 bg-green-100 text-green-500 text-4xl rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-200/50 animate-bounce"><i class="fa-solid fa-check"></i></div><h4 class="text-2xl font-black text-slate-800 mb-2">Report validé !</h4><p class="text-slate-600 font-medium mb-8 max-w-xs mx-auto">Le rendez-vous a bien été déplacé au <br><strong class="text-blue-600">{{ formatDateLong(rescheduleModal.rdv.date) }} à {{ rescheduleModal.rdv.heure }}</strong>.</p><div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 w-full"><p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Voulez-vous prévenir le client ?</p><div class="grid grid-cols-1 gap-3"><button @click="sendRescheduleSMS" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition transform active:scale-95 flex items-center justify-center gap-3"><i class="fa-solid fa-comment-sms text-xl"></i> OUI, envoyer le SMS</button><button @click="rescheduleModal.open=false; clientModal.open=false; rescheduleModal.step=1" class="w-full bg-white text-slate-400 border-2 border-slate-100 py-3 rounded-xl font-bold hover:bg-slate-50 hover:text-slate-600 transition">Non, revenir au RDV</button></div></div></div></div></div>
+    <div v-if="rescheduleModal.open" class="fixed inset-0 bg-slate-900/80 z-[350] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] fade-in"><div class="bg-slate-50 p-4 flex justify-between items-center border-b"><h3 class="font-bold text-lg text-slate-800">📅 Reporter Rendez-Vous</h3><button @click="rescheduleModal.open=false" class="w-8 h-8 rounded-full hover:bg-slate-200">✕</button></div><div v-if="rescheduleModal.step===1" class="p-6 overflow-y-auto space-y-4"><p class="text-sm font-bold text-blue-600 text-center mb-4">RDV Actuel: {{ formatDateFr(rescheduleModal.rdv.date) }} à {{ rescheduleModal.rdv.heure }}</p><div class="mb-4"><div class="flex items-center justify-between mb-2"><h5 class="text-xs font-black uppercase text-slate-500 tracking-wider"><i class="fa-solid fa-calendar-alt text-blue-500"></i> Choisir le Nouveau Jour :</h5><input type="date" v-model="rescheduleModal.date" @change="rescheduleModal.heure=null" class="p-1 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm cursor-pointer hover:bg-blue-50"></div><div class="overflow-x-auto pb-2 hide-scrollbar snap-x flex space-x-2"><button v-for="d in dateOptions" :key="d.val" @click="rescheduleModal.date=d.val; rescheduleModal.heure=null;" :class="[rescheduleModal.date===d.val ? 'bg-blue-600 text-white shadow-lg transform scale-[1.05] date-card-selected' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-400', d.isToday ? 'border-2 border-green-500 shadow-md' : '']" class="flex-shrink-0 w-16 h-20 rounded-lg flex flex-col items-center justify-center text-sm transition-all duration-300 snap-center date-card p-1"><span :class="rescheduleModal.date===d.val ? 'text-blue-200' : 'text-slate-400'" class="text-[9px] font-bold uppercase mb-0 transition-colors">{{ d.dayName }}</span><span class="text-2xl font-black leading-none">{{ d.dayNum }}</span><span class="text-[9px] font-medium opacity-80 mt-1">{{ d.month }}</span></button></div></div><div v-if="rescheduleModal.date" class="overflow-y-auto hide-scrollbar p-2 border border-slate-100 rounded-lg bg-white shadow-inner animate-fadeIn max-h-[300px]"><h5 class="text-xs font-black uppercase text-slate-500 tracking-wider mb-2"><i class="fa-solid fa-clock text-green-500"></i> Choisir la Nouvelle Heure (09:00 - 19:00) :</h5><div class="space-y-3"><div class="grid grid-cols-4 gap-2"><button v-for="h in timeSlots" :key="h" @click="rescheduleModal.heure=h" :class="rescheduleModal.heure===h ? 'bg-green-500 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-green-50'" class="py-1.5 rounded-md text-xs font-bold transition-all duration-200">{{ h }}</button></div><div class="pt-2 flex justify-center border-t border-slate-100"><input type="time" v-model="rescheduleModal.heure" class="border-2 border-blue-100 rounded-lg p-2 font-bold text-blue-900 text-center text-sm outline-none focus:border-blue-500 bg-blue-50 w-32"></div></div></div><div v-else class="flex-1 flex items-center justify-center text-center text-gray-400 border border-dashed border-gray-200 rounded-2xl"><p class="text-sm font-medium p-8">📅 Veuillez d'abord sélectionner une date ci-dessus.</p></div><div class="flex gap-2 mt-4"><button @click="rescheduleModal.open=false" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Annuler</button><button @click="confirmRescheduleStep1" :disabled="!rescheduleModal.date || !rescheduleModal.heure || (rescheduleModal.date === rescheduleModal.rdv.date && rescheduleModal.heure === rescheduleModal.rdv.heure)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 transition transform active:scale-95 disabled:opacity-50">Confirmer Report <i class="fa-solid fa-arrow-right"></i></button></div></div><div v-if="rescheduleModal.step===2" class="p-8 text-center animate-fadeIn flex flex-col items-center justify-center h-full"><div class="w-20 h-20 bg-green-100 text-green-500 text-4xl rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-200/50 animate-bounce"><i class="fa-solid fa-check"></i></div><h4 class="text-2xl font-black text-slate-800 mb-2">Report validé !</h4><p class="text-slate-600 font-medium mb-8 max-w-xs mx-auto">Le rendez-vous a bien été déplacé au <br><strong class="text-blue-600">{{ formatDateLong(rescheduleModal.rdv.date) }} à {{ rescheduleModal.rdv.heure }}</strong>.</p><div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 w-full"><p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Voulez-vous prévenir le client ?</p><div class="grid grid-cols-1 gap-3"><button @click="sendRescheduleSMS" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition transform active:scale-95 flex items-center justify-center gap-3"><i class="fa-solid fa-comment-sms text-xl"></i> OUI, envoyer le SMS</button><button @click="rescheduleModal.open=false; clientModal.open=false; rescheduleModal.step=1" class="w-full bg-white text-slate-400 border-2 border-slate-100 py-3 rounded-xl font-bold hover:bg-slate-50 hover:text-slate-600 transition">Non, revenir au RDV</button></div></div></div></div></div>
 
     <!-- HONOR MODAL Z-INDEX FIX -->
     <div v-if="honorModal.open" class="fixed inset-0 bg-slate-900/80 z-[350] flex items-center justify-center p-4 backdrop-blur-sm">
@@ -1512,7 +1693,9 @@
             const agences = ref([]);
             const sourcesList = ref(['Leboncoin', 'La Centrale', 'Facebook', 'Google', 'Instagram']);
             const sourceLogos = ref({}); 
-            const adminNamesList = ref(['Nathanaël', 'Charlène', 'Admin']); 
+            const adminNamesList = ref(['Nathanaël', 'Charlène', 'Admin']);
+            // GLOBAL SETTINGS POUR L'HEURE DE RAPPEL (DEFAULTS: J-J 8h, Veille 16h)
+            const globalSettings = ref({ reminderStartTime: '08:00', reminderEveTime: '16:00' }); 
             
             const selectedIds = ref([]);
             const bulkModal = reactive({ open: false, action: '', label: '' });
@@ -1532,7 +1715,7 @@
             const discountModal = reactive({ open: false, amount: null, reason: '', customReason: '', error: '' });
             const reminderAlertModal = reactive({ open: false });
             // MODALES MODERNES (NOUVEAU)
-            const teamEditModal = reactive({ open: false, member: null, name: '', email: '', assignedAgencies: [] });
+            const teamEditModal = reactive({ open: false, member: null, name: '', email: '', password: '', assignedAgencies: [] });
             const customConfirmModal = reactive({ open: false, title: '', message: '', onConfirm: null });
             const statsModal = reactive({ open: false });
 
@@ -1552,11 +1735,7 @@
             const pauseReasonSelect = ref('Vacances');
             const showCustomTime = ref(false);
             const mobileMenuOpen = ref(false);
-            // --- AJOUT MÉTÉO ---
-            const weatherData = ref(null);
-            const weatherLoading = ref(false);
-            const locationCity = ref('Activer Météo');
-            // --- FIN AJOUT MÉTÉO ---
+            
             // --- LOGIQUE DES THÈMES SAISONNIERS ---
             const currentTheme = computed(() => {
                 const d = new Date();
@@ -1633,6 +1812,10 @@
                         if(data.sources) sourcesList.value = data.sources; 
                         if(data.logos) sourceLogos.value = data.logos;
                         if(data.adminNames) adminNamesList.value = data.adminNames;
+                        // CHARGEMENT DE L'HEURE DE RAPPEL (DEFAULT 08:00)
+                        if(data.reminderStartTime) globalSettings.value.reminderStartTime = data.reminderStartTime;
+                        // CHARGEMENT DE L'HEURE DE RAPPEL VEILLE (DEFAULT 16:00)
+                        if(data.reminderEveTime) globalSettings.value.reminderEveTime = data.reminderEveTime;
                     }
                 });
                 
@@ -1676,9 +1859,25 @@
                 const lastLoginKey = 'lastWelcome_' + email;
                 const lastLoginDate = localStorage.getItem(lastLoginKey);
                 
-                // CHECK REMINDERS ON LOGIN
+                // CHECK REMINDERS ON LOGIN WITH TIME CONSTRAINT
                 setTimeout(() => {
-                    if (rappelsList.value.length > 0) {
+                    const currentHour = new Date().getHours();
+                    
+                    // Logic pour aujourd'hui (J-J)
+                    const startHour = parseInt(globalSettings.value.reminderStartTime.split(':')[0] || "8");
+                    const canShowToday = currentHour >= startHour;
+
+                    // Logic pour demain (Veille)
+                    const eveStartHour = parseInt(globalSettings.value.reminderEveTime.split(':')[0] || "16");
+                    const canShowVeille = currentHour >= eveStartHour;
+
+                    // On montre l'alerte SI :
+                    // 1. Rappels pour DEMAIN (SI l'heure de veille est dépassée)
+                    // 2. OU Rappels pour AUJOURD'HUI (SI l'heure de jour est dépassée)
+                    const showVeille = rappelsVeilleCount.value > 0 && canShowVeille;
+                    const showJour = rappelsJourCount.value > 0 && canShowToday;
+
+                    if (showVeille || showJour) {
                         reminderAlertModal.open = true;
                     }
                 }, 1000);
@@ -1695,6 +1894,14 @@
                     launchFireworks();
                     localStorage.setItem(lastLoginKey, today);
                 }
+            };
+
+            const saveGlobalSettings = async () => {
+                await db.collection('settings').doc('global').set({
+                    reminderStartTime: globalSettings.value.reminderStartTime,
+                    reminderEveTime: globalSettings.value.reminderEveTime
+                }, { merge: true });
+                alert("Paramètres sauvegardés !");
             };
 
             const currentFullDateLabel = computed(() => new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
@@ -1751,6 +1958,7 @@
                 teamEditModal.member = member;
                 teamEditModal.name = member.name;
                 teamEditModal.email = member.email;
+                teamEditModal.password = ''; // Reset du champ mot de passe
                 // Charge les agences déjà assignées ou tableau vide
                 teamEditModal.assignedAgencies = member.assignedAgencies || [];
                 teamEditModal.open = true;
@@ -1758,11 +1966,19 @@
 
             const saveTeamMemberEdit = async () => {
                 if (!teamEditModal.member) return;
-                await db.collection('users').doc(teamEditModal.member.id).update({ 
+                
+                const updateData = { 
                     name: teamEditModal.name, 
                     email: teamEditModal.email,
                     assignedAgencies: teamEditModal.assignedAgencies 
-                });
+                };
+
+                // Si un mot de passe a été saisi, on l'ajoute à la mise à jour
+                if(teamEditModal.password && teamEditModal.password.trim() !== '') {
+                    updateData.password = teamEditModal.password;
+                }
+
+                await db.collection('users').doc(teamEditModal.member.id).update(updateData);
                 teamEditModal.open = false;
             };
 
@@ -1790,7 +2006,29 @@
             const onModalPhoneInput = (e) => { const digits = normalizePhone(e.target.value).slice(0, 10); if (!clientModal.rdv) return; clientModal.rdv.telephone = formatPhone(digits); };
             const startWizard = () => { Object.assign(form, { agence:null, civilite:'M.', nom:'', telephone:'', date:'', heure:'', modele:'', source:'' }); clientExists.value = false; wizard.step = 1; wizard.open = true; agencySearch.value = ''; showCustomTime.value = false; };
             const checkAgenceAndProceed = async (ag) => { if(ag.statut_activite === 'pause' && ag.motif_pause === 'Vacances' && ag.date_pause_fin) { const today = new Date().toISOString().split('T')[0]; if (today > ag.date_pause_fin) { await db.collection('agences').doc(ag.id).update({ statut_activite: 'actif', motif_pause: '', date_pause_debut: '', date_pause_fin: '' }); ag.statut_activite = 'actif'; } } if(ag.statut_activite === 'pause') { pausedAgencyModal.agency = ag; pausedAgencyModal.open = true; return; } form.agence = ag; wizard.step++; };
-            const getPauseMessage = (ag) => { if(!ag) return ''; if(ag.motif_pause === 'Vacances' && ag.date_pause_debut && ag.date_pause_fin) return `Cette agence est en vacances du ${formatDateShort(ag.date_pause_debut)} au ${formatDateShort(ag.date_pause_fin)}.`; if(ag.motif_pause === 'Complet') return "Cette agence est complète."; if(ag.motif_pause === 'Travaux') return "Cette agence est en travaux."; return `Cette agence est en ${ag.motif_pause || 'pause'}.`; };
+            
+            const getPauseMessage = (ag) => { 
+                if(!ag) return ''; 
+                
+                // Amélioration : Correction logique pour forcer l'affichage des vacances même si le format de date est bizarre ou manquant
+                // On se base uniquement sur le "motif" si les dates ne sont pas là
+                if (ag.motif_pause === 'Vacances') {
+                    if (ag.date_pause_debut && ag.date_pause_fin) {
+                        const start = new Date(ag.date_pause_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+                        const end = new Date(ag.date_pause_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+                        return `Cette agence est en vacances du ${start} au ${end}.`; 
+                    } else {
+                        // Fallback si dates manquantes mais motif = Vacances
+                        return "Cette agence est en vacances (Dates non précisées).";
+                    }
+                }
+
+                if(ag.motif_pause === 'Complet') return "Cette agence est complète (Surchargée)."; 
+                if(ag.motif_pause === 'Travaux') return "Cette agence est fermée pour travaux."; 
+                // Fallback général
+                return `Cette agence est indisponible pour le motif suivant : ${ag.motif_pause || 'Pause momentanée'}.`; 
+            };
+            
             const selectSource = (src) => { if (!form.modele || !form.modele.trim()) { alert('Merci de renseigner le modèle du véhicule avant de continuer.'); return; } form.source = src; wizard.step++; };
             const finalizeRdv = async (statut) => { await db.collection('rendezvous').add({ ...form, agenceId: form.agence.id, prix: parseFloat(form.agence.prix)||0, statut, created: new Date(), createdBy: user.name, rappelFait: false }); wizard.open = false; };
             
@@ -2078,10 +2316,12 @@
 
             // LIST OF PROSPECTORS FOR FILTER
             const allProspectors = computed(() => {
-                const set = new Set();
-                rdvList.value.forEach(r => { if(r.createdBy) set.add(r.createdBy); });
-                teamList.value.forEach(u => set.add(u.name));
-                return Array.from(set).sort();
+                // 1. Membres de l'équipe active
+                const activeTeam = teamList.value.map(u => u.name);
+                // 2. Les Admins (Nathanaël, Charlène, etc.) définis dans les réglages
+                const admins = adminNamesList.value;
+                // 3. On combine les deux listes sans doublons pour le filtre
+                return Array.from(new Set([...activeTeam, ...admins])).sort();
             });
 
             const selectAll = (e) => { const list = view.value === 'trash' ? trashList.value : filteredList.value; if(e.target.checked) { selectedIds.value = list.map(r => r.id); } else { selectedIds.value = []; } };
@@ -2208,9 +2448,83 @@
                 } 
                 return arr; 
             });
-            const morningSlots = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'];
-            const afternoonSlots = ['14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'];
-            const timeSlots = [...morningSlots, ...afternoonSlots]; 
+            // NOUVELLE LOGIQUE HEURES (09h00 -> 19h00)
+            const timeSlots = computed(() => {
+                const slots = [];
+                for (let hour = 9; hour <= 19; hour++) {
+                    const hStr = String(hour).padStart(2, '0');
+                    slots.push(`${hStr}:00`);
+                    if (hour !== 19) {
+                        slots.push(`${hStr}:30`);
+                    }
+                }
+                return slots;
+            });
+
+            // LARGE CHOIX DE VÉHICULES (AUTO-COMPLETE) - NETTOYÉ (PLUS DE FINITIONS)
+            const commonCars = ref([
+                "Renault Clio", "Renault Megane", "Renault Captur", "Renault Austral", "Renault Arkana", "Renault Zoe", "Renault Scenic", "Renault Espace", "Renault Twingo", "Renault Kangoo",
+                "Peugeot 208", "Peugeot 2008", "Peugeot 308", "Peugeot 3008", "Peugeot 5008", "Peugeot 508", "Peugeot Rifter", "Peugeot Traveller",
+                "Citroen C3", "Citroen C3 Aircross", "Citroen C4", "Citroen C5 Aircross", "Citroen C5 X", "Citroen Berlingo",
+                "Volkswagen Golf", "Volkswagen Polo", "Volkswagen Tiguan", "Volkswagen T-Roc", "Volkswagen T-Cross", "Volkswagen Passat", "Volkswagen Touareg", "Volkswagen ID.3", "Volkswagen ID.4", "Volkswagen Golf R-Line",
+                "Audi A1", "Audi A3", "Audi A4", "Audi A5", "Audi A6", "Audi Q2", "Audi Q3", "Audi Q5", "Audi Q7", "Audi Q8", "Audi RS3", "Audi RSQ3",
+                "BMW Série 1", "BMW Série 3", "BMW Série 5", "BMW X1", "BMW X3", "BMW X5", "BMW M2", "BMW M3", "BMW M4",
+                "Mercedes Classe A", "Mercedes Classe C", "Mercedes Classe E", "Mercedes GLA", "Mercedes CLA", "Mercedes GLE", "Mercedes GLC",
+                "Toyota Yaris", "Toyota Corolla", "Toyota C-HR", "Toyota RAV4", "Toyota Aygo", "Toyota Highlander",
+                "Ford Fiesta", "Ford Puma", "Ford Focus", "Ford Kuga", "Ford Ranger", "Ford Mustang",
+                "Fiat 500", "Fiat Panda", "Fiat Tipo", "Fiat 500X",
+                "Dacia Sandero", "Dacia Duster", "Dacia Jogger", "Dacia Spring",
+                "Hyundai Tucson", "Hyundai Kona", "Hyundai i20", "Hyundai i30", "Hyundai Ioniq 5",
+                "Kia Sportage", "Kia Niro", "Kia Picanto", "Kia Rio", "Kia EV6",
+                "Tesla Model 3", "Tesla Model Y", "Tesla Model S", "Tesla Model X",
+                "Nissan Qashqai", "Nissan Juke", "Nissan X-Trail", "Nissan Leaf",
+                "Mini Cooper", "Mini Countryman", "Mini Clubman",
+                "Seat Ibiza", "Seat Leon", "Seat Arona", "Seat Ateca", "Seat Cupra",
+                "Skoda Fabia", "Skoda Octavia", "Skoda Kamiq", "Skoda Karoq", "Skoda Kodiaq",
+                "Volvo XC40", "Volvo XC60", "Volvo XC90",
+                "Land Rover Evoque", "Land Rover Velar", "Land Rover Sport",
+                "Porsche Macan", "Porsche Cayenne", "Porsche 911"
+            ]);
+
+            // FONCTION COLLER NUMÉRO ET FORMATER
+            const pastePhoneNumber = async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                        // Nettoyage agressif : supprime +33, 0033 et tout ce qui n'est pas chiffre
+                        let cleaned = text.replace(/^\+33/, '0').replace(/^0033/, '0').replace(/\D/g, '');
+                        
+                        // Si après nettoyage on a un format type '336...' sans le +
+                        if (cleaned.startsWith('33') && cleaned.length === 11) cleaned = '0' + cleaned.substring(2);
+                        
+                        // Si trop long, on coupe
+                        if (cleaned.length > 10) cleaned = cleaned.substring(0, 10);
+
+                        if (cleaned.length === 10) {
+                            form.telephone = formatPhone(cleaned);
+                            
+                            // Vérification Client Existant INSTANTANÉE
+                            const digits = normalizePhone(form.telephone);
+                            const exist = rdvList.value.find(r => normalizePhone(r.telephone) === digits);
+                            if (exist) {
+                                form.nom = exist.nom;
+                                form.civilite = exist.civilite;
+                                form.modele = exist.modele;
+                                clientExists.value = true;
+                            } else {
+                                clientExists.value = false;
+                            }
+                        } else {
+                            // On ne fait rien si format invalide pour ne pas bloquer l'UX avec une alerte
+                            // Ou juste un log
+                            console.log("Format collé invalide");
+                        }
+                    }
+                } catch (err) {
+                    console.error('Erreur collage:', err);
+                    // On ne met pas d'alerte pour éviter le "navigateur propose de coller" si c'est un blocage
+                }
+            };
 
 // --- NOUVELLE LOGIQUE TIMELINE (VERSION CORRIGÉE) ---
 
@@ -2509,58 +2823,7 @@ const nextRdvLabel = computed(() => {
             const statusClass = (s) => ({ 'honore': 'bg-green-100 text-green-700', 'pas_venu': 'bg-red-100 text-red-700', 'annule': 'bg-gray-200 text-gray-500', 'a_confirmer': 'bg-orange-100 text-orange-700', 'confirme': 'bg-blue-100 text-blue-700' }[s] || 'bg-gray-100');
             const validateAction = async (r, type) => { if(type==='rappels') await db.collection('rendezvous').doc(r.id).update({ rappelFait:true }); if(type==='confirmations') await db.collection('rendezvous').doc(r.id).update({ statut:'confirme' }); };
             const generateLink = (r, type) => generateMsgLink(r, type);
-// --- FONCTIONS MÉTÉO SIMULÉE (À placer avant le return final) ---
 
-const fetchSimulatedWeather = async (lat, lon) => {
-    // 1. SIMULATION DE LA GÉOLOCALISATION INVERSE (pour le nom de la ville)
-    // Logique simplifiée basée sur la latitude/longitude
-    if (lat > 47 && lon < 0) locationCity.value = 'Nantes';
-    else if (lat > 48) locationCity.value = 'Paris';
-    else locationCity.value = 'Localisation Actuelle';
-
-    // 2. SIMULATION DE LA MÉTÉO (données aléatoires mais réalistes)
-    return new Promise(resolve => {
-        setTimeout(() => {
-            const temp = Math.round(15 + Math.random() * 10 - 5); // Température simulée
-            const conditionKey = Math.floor(Math.random() * 5);
-            const conditions = [
-                { desc: 'Ensoleillé', icon: 'fa-sun', tempClass: 'text-yellow-400' },
-                { desc: 'Nuageux', icon: 'fa-cloud', tempClass: 'text-gray-400' },
-                { desc: 'Averses', icon: 'fa-cloud-showers-heavy', tempClass: 'text-blue-400' },
-                { desc: 'Orages', icon: 'fa-cloud-bolt', tempClass: 'text-red-500' },
-                { desc: 'Couvert', icon: 'fa-cloud-sun', tempClass: 'text-gray-500' },
-            ];
-            resolve({
-                temp: temp,
-                unit: '°C',
-                condition: conditions[conditionKey],
-                timestamp: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-            });
-        }, 1000); // Délai de 1s pour simuler le temps de chargement
-    });
-};
-
-const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-        console.error("Geolocation non supportée.");
-        weatherLoading.value = false;
-        return;
-    }
-
-    weatherLoading.value = true;
-    navigator.geolocation.getCurrentPosition(async (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-        const data = await fetchSimulatedWeather(lat, lon);
-        weatherData.value = data;
-        weatherLoading.value = false;
-    }, (error) => {
-        console.error("Erreur de Géolocalisation:", error);
-        weatherLoading.value = false;
-    }, { enableHighAccuracy: false, timeout: 5000, maximumAge: 0 });
-};
-
-// --- FIN FONCTIONS MÉTÉO SIMULÉE ---
             return {
                 user, loginEmail, loginPass, view, login, logout, loginAdminSelection, finalizeAdminLogin,
                 rdvList, agences, sourcesList, stats, sortedDaily, filteredList, displayedList, rappelsList, confirmList, rappelCount, confirmCount,
@@ -2573,7 +2836,7 @@ const getCurrentLocation = () => {
                 openSettings, openAgencyEdit, saveEditingAgency, editingAgency, saveAgency, deleteAgency, addSource, removeSource, changeSourceLogo, getLogo,
                 newSource, editingMsgAgence, editingMsgType, clientExists, insertTag, msgLabels,
                 generateMsgLink, generateLink, validateAction,
-                dateOptions, morningSlots, afternoonSlots, timeSlots, showCustomTime, 
+                dateOptions, timeSlots, commonCars, pastePhoneNumber, showCustomTime, 
                 filters, search, 
                 formatDateFr, formatDateShort, formatDateLong, formatPrice, isEnCours, isLateAndNoStatus, displayStatus, statusClass, getAgenceName,
                 normalizePhone, onWizardPhoneInput, onModalPhoneInput,
@@ -2597,6 +2860,7 @@ const getCurrentLocation = () => {
                 reminderAlertModal, rappelsVeilleCount, rappelsJourCount,
                 teamEditModal, openTeamEdit, saveTeamMemberEdit,
                 customConfirmModal, openCustomConfirm, rappelFilters, rappelsDisplay,
+                globalSettings, saveGlobalSettings,
                 
                 // NEW STATS
                 statsModal, openStatsModal, detailedStats, statsFilterAgency, statsFilterUser, visibleAgencies
