@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+dna smon code je veux ajouter une module, tu vois y a un tableau de bord, il y a tous les rendez-vous et Rappels et là je vais rajouter pour admin fiche de paye, je vais donner un module ou il y aura toutes les informations dedans c'est-à-dire tout ce qu'on doit dépenser dans ce mois pour donner aux prospecteurs, qu'est-ce qu'on a gagné, salaire brut salaire net c'est là qu'on va pouvoir mettre un pourboire pour quelqu'un, il va le voir de son côté, il va voir le pourboire avec justement une note, on peut rajouter une note, on peut aussi supprimer la note à tout moment, je veux un espace fiche de paye pour bien précis, on va voir ce qu'on a gagné admin ce qu'on va perdre ce qu'on a gagné grâce à eux, prospecteur sur ce qu'il a, il a fait comme chiffre d'affaires, ce qu'on doit lui verser ce qu'on doit et lui dans ce côté il aura aussi mon portefeuille dans mon portefeuille, il verra ce qu'il va gagner mon portefeuille vraiment chaque page qu'on va faire pour lui ça va être rajouté dans son portefeuille sur pourboire, il va avoir le pourboire rajouter comme comme une banque et je peux retirer le pourboire. Peu importe, je peux aussi gérer son portefeuille pour qu'elle puisse pas avoir une transaction.  Merci de me redonner mon code complet HTML pour que je puisse le copier et le coller ailleurs : <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -493,24 +493,19 @@
     </div>
 
     <!-- ADMIN CA (MODIFIÉ POUR MARGE NETTE + CA JOUR) -->
-    <div v-if="user.role==='admin'" class="bg-white border border-slate-100 px-3 md:px-4 py-1 md:py-2 rounded-xl text-right ml-auto flex-shrink-0 flex items-center gap-3 md:gap-4 shadow-sm overflow-x-auto max-w-[50vw] hide-scrollbar">
-        <div class="flex flex-col items-end border-r pr-3 border-slate-100 flex-shrink-0">
-             <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">CA Jour</p>
-             <p class="text-xs font-black text-slate-600 leading-none">{{ formatPrice(stats.ca_daily) }}</p>
-        </div>
-        <div class="hidden md:flex flex-col items-end border-r pr-3 border-slate-100 flex-shrink-0">
-             <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">CA Brut</p>
-             <p class="text-xs font-bold text-slate-500 leading-none">{{ formatPrice(stats.ca) }}</p>
-        </div>
-        <div class="flex flex-col items-end border-r pr-3 border-slate-100 flex-shrink-0">
-             <p class="text-[9px] font-bold text-orange-400 uppercase tracking-wider">Commissions</p>
-             <p class="text-xs font-bold text-orange-500 leading-none">-{{ formatPrice(stats.commissions) }}</p>
-        </div>
-        <div class="flex flex-col items-end flex-shrink-0">
-            <p class="text-[9px] text-green-600 font-bold uppercase tracking-wider flex items-center justify-end gap-1"><i class="fa-solid fa-wallet"></i> <span class="hidden md:inline">Marge</span></p>
-            <div class="flex flex-col items-end">
-                <p class="text-sm md:text-xl font-black text-green-700 leading-none">{{ formatPrice(stats.net) }}</p>
+   <div v-if="user.role==='admin'" class="ml-auto flex-shrink-0">
+        <div class="bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-3 md:gap-4">
+            
+            <div class="flex flex-col items-end border-r pr-3 md:pr-4 border-slate-100">
+                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Aujourd'hui</p>
+                <p class="text-xs md:text-sm font-black text-slate-700 leading-none">{{ formatPrice(stats.ca_daily) }}</p>
             </div>
+
+            <div class="flex flex-col items-end">
+                <p class="text-[9px] font-bold text-blue-400 uppercase tracking-wider">Total Brut</p>
+                <p class="text-xs md:text-sm font-black text-blue-600 leading-none">{{ formatPrice(stats.ca) }}</p>
+            </div>
+
         </div>
     </div>
 
@@ -2482,7 +2477,7 @@
                 };
             });
 
-            // STATS ADMIN AVEC CALCUL MARGE
+           // STATS ADMIN AVEC CALCUL MARGE (CORRIGÉ : EXCLURE ADMINS DES COMMISSIONS)
             const stats = computed(() => {
                 const nowStr = new Date().toISOString().split('T')[0];
                 const currentMonth = new Date().getMonth();
@@ -2493,7 +2488,7 @@
                 const noshow = rdvList.value.filter(r => r.statut==='pas_venu').length;
                 const cancelled = rdvList.value.filter(r => r.statut==='annule').length;
 
-                // CA BRUT
+                // CA BRUT (Tout le monde compte pour le CA)
                 const ca = rdvList.value.filter(r => r.honorBilling==='facture').reduce((acc,r) => { 
                     const price = parseFloat(r.prix) || 0; 
                     const discount = parseFloat(r.geste_commercial) || 0; 
@@ -2507,7 +2502,7 @@
                     return acc + (price - discount); 
                 }, 0);
 
-                // Commissions Totales
+                // Commissions Totales (Filtrage des Admins)
                 const commissionMap = {}; 
                 rdvList.value.forEach(r => {
                     if (r.statut === 'honore' && r.date) {
@@ -2528,16 +2523,28 @@
                 const bonusAmount = parseFloat(globalCommission.amount) || 100;
 
                 for (const [userName, count] of Object.entries(commissionMap)) {
+                    // --- NOUVELLE LOGIQUE : VÉRIFIER SI C'EST UN ADMIN ---
+                    // 1. Vérifier dans la liste des noms admins (hardcodé/settings)
+                    const isNameInAdminList = adminNamesList.value.includes(userName);
+                    // 2. Vérifier dans la liste des utilisateurs (rôle)
+                    const userObj = teamList.value.find(u => u.name === userName);
+                    const isRoleAdmin = userObj && userObj.role === 'admin';
+
+                    // Si c'est un admin, on ne calcule PAS de commission (coût = 0)
+                    if (isNameInAdminList || isRoleAdmin) {
+                        continue; 
+                    }
+                    // -----------------------------------------------------
+
                     let userTotal = count * basePrice;
                     if (count >= bonusThreshold) {
                         const multiplier = Math.floor((count - bonusThreshold) / bonusStep) + 1;
                         userTotal += (multiplier * bonusAmount);
                     }
                     
-                    // Add Tips from teamList
-                    const member = teamList.value.find(u => u.name === userName);
-                    if (member && tips[member.id]) {
-                        userTotal += parseFloat(tips[member.id]);
+                    // Add Tips from teamList (seulement pour les non-admins)
+                    if (userObj && tips[userObj.id]) {
+                        userTotal += parseFloat(tips[userObj.id]);
                     }
 
                     totalCommissions += userTotal;
